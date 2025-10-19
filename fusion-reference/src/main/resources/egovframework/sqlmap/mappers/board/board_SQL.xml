@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="egovframework.fusion.board.service.BoardMapper">
+
+	<select id="getBoardList" resultType="boardVo"
+		parameterType="boardVo">
+		WITH RECURSIVE HierarchicalData AS (
+		SELECT
+		BOARD_ID,
+		PARENT_BOARD_ID,
+		BOARD_TITLE,
+		BOARD_TYPE,
+		BOARD_REGIST_DATETIME,
+		1 AS
+		BOARD_LEVEL
+		FROM BOARD
+		WHERE DELETEYN = 0 AND PARENT_BOARD_ID IS NULL
+
+		UNION ALL
+
+		SELECT
+		B.BOARD_ID,
+		B.PARENT_BOARD_ID,
+		B.BOARD_TITLE,
+		B.BOARD_TYPE,
+		B.BOARD_REGIST_DATETIME,
+		H.BOARD_LEVEL + 1
+		FROM BOARD B
+		INNER JOIN HierarchicalData H
+		ON B.PARENT_BOARD_ID = H.BOARD_ID
+		)
+		SELECT
+		*
+		FROM HierarchicalData
+		ORDER BY
+		CASE WHEN BOARD_TYPE = 'notice' THEN 1
+		ELSE 2 END,
+		BOARD_REGIST_DATETIME DESC;
+	</select>
+
+	<insert id="insBoardPost" parameterType="boardVo">
+		<selectKey keyProperty="boardId" resultType="int"
+			order="BEFORE">
+			SELECT IFNULL(MAX(board_id), 0) + 1 FROM board;
+		</selectKey>
+
+		INSERT INTO BOARD (
+		PARENT_BOARD_ID,
+		BOARD_REF,
+		BOARD_REF_SEQ,
+		POPUP_YN,
+		BOARD_TITLE,
+		BOARD_CONTENT,
+		USER_ID,
+		menuId,
+		board_type_id,
+		BOARD_REGIST_DATETIME,
+		board_type,
+		deleteYn
+		)
+		VALUES (
+		#{parentBoardId,
+		jdbcType=INTEGER},
+		<choose>
+			<when test="boardRef != null">
+				#{boardRef}
+			</when>
+			<otherwise>
+				#{boardId} -- 🚀 새롭게 생성된 boardId를 사용
+			</otherwise>
+		</choose>
+		,
+		<choose>
+			<when test="boardRefSeq != null">
+				#{boardRefSeq}
+			</when>
+			<otherwise>
+				1
+			</otherwise>
+		</choose>
+		,
+		#{popupYn},
+		#{boardTitle},
+		#{boardContent},
+		#{userId},
+		#{menuId},
+		1,
+		NOW(),
+		#{boardType},
+		0
+		);
+	</insert>
+
+
+
+	<select id="getBoardPost" resultType="boardVo"
+		parameterType="boardVo">
+		SELECT
+		B.BOARD_ID,
+		B.PARENT_BOARD_ID,
+		B.BOARD_TITLE,
+		B.BOARD_CONTENT,
+		B.USER_ID,
+		U.USER_NAME AS userName,
+		B.BOARD_REGIST_DATETIME,
+		B.BOARD_UPDATE_DATETIME,
+		B.VIEWCOUNT
+		FROM BOARD
+		B
+		LEFT JOIN BOARD_USER U ON B.USER_ID = U.USER_ID
+		WHERE B.BOARD_ID =
+		#{boardId}
+	</select>
+
+
+
+	<update id="updBoardPost" parameterType="boardVO">
+		UPDATE BOARD
+		SET
+		BOARD_TITLE = #{boardTitle},
+		BOARD_CONTENT = #{boardContent}
+		WHERE
+		BOARD_ID = #{boardId};
+	</update>
+
+	<update id="delBoardPost" parameterType="boardVO">
+		UPDATE BOARD SET
+		DELETEYN = 1
+		WHERE BOARD_ID = #{boardId};
+	</update>
+
+	<select id="searchBoard" resultType="boardVO">
+		SELECT
+		b.board_id,
+		b.board_title,
+		b.board_content,
+		b.board_regist_datetime,
+		b.board_update_datetime,
+		b.menuId,
+		b.viewcount,
+		m.menu_name,
+		u.user_name
+		FROM BOARD b
+		LEFT JOIN BOARD_USER u ON b.user_id
+		= u.user_id
+		LEFT JOIN MENU m ON b.menuId = m.menu_Id
+		WHERE board_type_Id
+		= 1
+		<if test="searchType == 'title'">
+			AND b.board_title LIKE CONCAT('%', #{keyword}, '%')
+		</if>
+		<if test="searchType == 'content'">
+			AND b.board_content LIKE CONCAT('%', #{keyword}, '%')
+		</if>
+		<if test="searchType == 'writer'">
+			AND u.user_name LIKE CONCAT('%', #{keyword}, '%')
+		</if>
+		<if test="searchType == 'total'">
+			AND (b.board_title LIKE CONCAT('%', #{keyword}, '%')
+			OR
+			b.board_content LIKE CONCAT('%', #{keyword}, '%')
+			OR u.user_name LIKE
+			CONCAT('%', #{keyword}, '%'))
+		</if>
+		AND menuId IN
+		<foreach item="id" collection="boardMenuIds" open="("
+			separator="," close=")">
+			#{id}
+		</foreach>
+		;
+	</select>
+
+	<select id="getPopupBoards" resultType="boardVO">
+		SELECT
+		board_id,
+		board_title,
+		board_content
+		FROM BOARD
+		WHERE popup_yn=1
+		ORDER
+		BY
+		board_regist_datetime DESC
+	</select>
+
+	<select id="getBoardListWithLimit" parameterType="boardVo"
+		resultType="boardVo">
+		SELECT
+		A.BOARD_ID,
+		A.BOARD_TITLE,
+		B.USER_NAME,
+		A.VIEWCOUNT,
+		A.BOARD_REGIST_DATETIME
+		FROM BOARD A
+		JOIN BOARD_USER B ON A.USER_ID =
+		B.USER_ID
+		ORDER BY A.BOARD_ID DESC
+		LIMIT #{limit};
+	</select>
+
+	<update id="checkDelBoard" parameterType="list">
+		UPDATE BOARD SET DELETEYN = 1 WHERE BOARD_ID IN
+		<foreach item="boardId" collection="boardMenuIds" open="("
+			separator="," close=")">
+			#{boardId}
+		</foreach>
+	</update>
+
+	<select id="getTotalBoardCount" resultType="int">
+		SELECT COUNT(*)
+		FROM
+		BOARD
+		WHere menuId=#{menuId}
+	</select>
+
+
+	<select id="getBoardListWithPaging" parameterType="boardVo"
+		resultType="boardVo">
+		WITH RECURSIVE HierarchicalData AS (
+		SELECT
+		A.BOARD_ID,
+		A.BOARD_TITLE,
+		A.BOARD_REF,
+		A.BOARD_REF_SEQ,
+		A.PARENT_BOARD_ID,
+		A.menuId,
+		B.USER_NAME,
+		A.VIEWCOUNT,
+		A.BOARD_REGIST_DATETIME,
+		A.BOARD_TYPE_ID,
+		A.BOARD_TYPE, 
+		0 AS BOARD_LEVEL 
+		FROM BOARD A
+		JOIN BOARD_USER B ON A.USER_ID = B.USER_ID
+		WHERE A.menuId = #{menuId} AND DELETEYN = 0 AND A.PARENT_BOARD_ID = 0
+
+		UNION ALL
+
+		SELECT
+		A.BOARD_ID,
+		A.BOARD_TITLE,
+		A.BOARD_REF,
+		A.BOARD_REF_SEQ,
+		A.PARENT_BOARD_ID,
+		A.menuId,
+		B.USER_NAME,
+		A.VIEWCOUNT,
+		A.BOARD_REGIST_DATETIME,
+		A.BOARD_TYPE_ID,
+		A.BOARD_TYPE, 
+		H.BOARD_LEVEL + 1 
+		FROM BOARD A
+		JOIN BOARD_USER B ON A.USER_ID = B.USER_ID
+		JOIN HierarchicalData H ON A.PARENT_BOARD_ID = H.BOARD_ID
+		WHERE A.menuId = #{menuId} AND DELETEYN = 0
+		)
+		SELECT * FROM HierarchicalData
+		ORDER BY
+		CASE WHEN BOARD_TYPE = 'notice' THEN 1 ELSE 2 END, 
+		BOARD_REF ASC,
+		BOARD_REF_SEQ ASC
+		LIMIT #{limit} OFFSET #{startRow};
+
+
+	</select>
+
+	<!-- 게시글 답글 추가 -->
+	<insert id="addReplyBoard" parameterType="boardVo">
+		INSERT INTO BOARD (
+		PARENT_BOARD_ID,
+		BOARD_REF,
+		BOARD_REF_SEQ,
+		BOARD_TITLE,
+		BOARD_CONTENT,
+		USER_ID,
+		BOARD_REGIST_DATETIME,
+		BOARD_TYPE,
+		menuId,
+		board_type_id,
+		deleteYn
+		)
+		VALUES (
+		#{parentBoardId},
+		#{boardRef},
+		#{boardRefSeq},
+		#{boardTitle},
+		#{boardContent},
+		#{userId},
+		now(),
+		'normal',
+		#{menuId},
+		1,
+		0
+		);
+	</insert>
+
+	<select id="getMaxBoardRef" resultType="int">
+		SELECT
+		BOARD_REF FROM
+		BOARD
+	</select>
+
+	<select id="getMaxBoardSeq" parameterType="int" resultType="int">
+		SELECT IFNULL(MAX(BOARD_REF_SEQ), 1)
+		FROM BOARD
+		WHERE PARENT_BOARD_ID =
+		#{parentBoardId}
+	</select>
+
+
+	<select id="getBoardById" parameterType="int"
+		resultType="boardVo">
+		SELECT BOARD_ID, BOARD_REF, BOARD_REF_SEQ
+		FROM BOARD
+		WHERE
+		BOARD_ID = #{boardId}
+	</select>
+
+	<!-- 조회수 -->
+	<update id="updateViewCount">
+		UPDATE BOARD b
+		JOIN VIEWHISTORY vh ON b.BOARD_ID =
+		vh.BOARD_ID
+		AND vh.USER_ID = #{userId}
+		AND DATE(vh.VIEW_DATE) =
+		CURDATE()
+		SET b.VIEWCOUNT =
+		b.VIEWCOUNT + 1
+		WHERE b.BOARD_ID =
+		#{boardId};
+	</update>
+
+
+	<insert id="insertViewHistory">
+
+		INSERT INTO VIEWHISTORY (history_id, board_id,
+		user_id, view_date)
+		SELECT
+		(SELECT IFNULL(MAX(history_id), 0) + 1 FROM
+		VIEWHISTORY) AS history_id,
+		#{boardId} AS board_id,
+		#{userId} AS
+		user_id,
+		CURDATE() AS view_date
+		FROM DUAL
+		WHERE NOT EXISTS (
+		SELECT 1 FROM
+		VIEWHISTORY
+		WHERE board_id = #{boardId}
+		AND user_id = #{userId}
+		AND
+		view_date = CURDATE()
+		);
+
+	</insert>
+</mapper>

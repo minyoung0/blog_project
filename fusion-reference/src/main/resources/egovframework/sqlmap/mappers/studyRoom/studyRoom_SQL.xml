@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="egovframework.fusion.studyRoom.service.StudyRoomMapper">
+
+	<!-- 독서실 정보 -->
+	<select id="getSiteName" resultType="StudyRoomVo">
+		select * from studyroom_tb
+		where menu_id=#{menuId}
+	</select>
+
+	<!-- 독서실 방 정보 -->
+	<select id="getRoomList" resultType="RoomVO">
+		select * from room_tb order
+		by room_id
+	</select>
+
+	<!-- 좌석정보 -->
+	<select id="getSeatInfo" resultType="SeatVO">
+		SELECT s.seat_id,
+		s.room_id,
+		s.seat_location,
+		s.seat_status,
+		so.disabled_reason,
+		so.start_date,
+		so.end_date
+		FROM seat_tb s
+		LEFT JOIN seat_off_tb so ON
+		s.seat_id=so.seat_id WHERE
+		room_id=#{roomId};
+	</select>
+
+	<select id="getReservList" resultType="ReservationVO">
+		SELECT
+		s.room_id,
+		s.seat_id,
+		rv.reserv_id,
+		rv.seat_id,
+		rv.user_id,
+		rv.reserv_create_at,
+		rv.reserv_date,
+		rv.start_time,
+		rv.end_time,
+		rv.reserv_status
+		FROM reservation_tb rv
+		LEFT JOIN seat_tb s ON s.seat_id = rv.seat_id
+		WHERE s.room_id = #{roomId}
+		AND DATE(rv.reserv_date) = DATE(#{selectDate})
+		AND rv.reserv_status = 1;
+	</select>
+
+
+	<select id="getOperUpdateInfo" resultType="StudyRoomVO">
+		SELECT * FROM
+		studyroom_update_tb
+		WHERE DATE(update_date) =
+		STR_TO_DATE(#{selectDate}, '%Y-%m-%d')
+	</select>
+
+	<select id="getOperDefaultInfo" resultType="StudyRoomVO">
+		SELECT * FROM
+		studyroom_tb WHERE studyroom_id=1
+	</select>
+
+	<select id="getReservInfo" resultType="ReservationVO">
+		SELECT * FROM
+		reservation_tb
+		WHERE seat_id = #{seatId}
+		AND DATE(reserv_date) =
+		STR_TO_DATE(#{selectDate}, '%Y-%m-%d')
+		AND reserv_status = 1
+		ORDER BY
+		start_time
+	</select>
+
+	<select id="getSeatOffInfo" resultType="SeatVO">
+		select * from seat_off_tb
+		where seat_id=#{seatId}
+	</select>
+
+	<insert id="insertReservation">
+		INSERT INTO reservation_tb (
+		seat_id,
+		user_id,
+		reserv_create_at,
+		reserv_date,
+		start_time,
+		end_time,
+		reserv_status,
+		reserv_reason
+		) VALUES (
+		#{seatId},
+		#{userId},
+		NOW(),
+		STR_TO_DATE(#{selectDay}, '%Y-%m-%d'),
+		#{startDateTime},
+		#{endDateTime},
+		1,
+		#{selectReason}
+		)
+	</insert>
+
+	<select id="getMyReserv" resultType="ReservationVO">
+		SELECT
+		r.reserv_id,
+		r.seat_id,
+		r.user_id,
+		r.reserv_create_at,
+		r.start_time,
+		r.end_time,
+		r.reserv_reason,
+		r.reserv_date,
+		r.reserv_status,
+		s.seat_id,
+		s.seat_location,
+		rm.room_name
+		FROM reservation_tb r
+		JOIN seat_tb s ON
+		r.seat_id = s.seat_id
+		JOIN room_tb rm ON s.room_id = rm.room_id
+		WHERE
+		r.user_id = #{userId}
+		AND r.reserv_status = 1
+		AND DATE(r.reserv_date) <![CDATA[ >=  ]]>
+		CURDATE()
+	</select>
+	<update id="cancelReserv">
+		update reservation_tb
+		set reserv_status=0
+		where
+		reserv_id=#{reservId}
+
+	</update>
+
+	<select id="getStudyRoomOffList" resultType="StudyRoomVO">
+		SELECT * FROM
+		studyroom_update_tb
+		WHERE update_date<![CDATA[ >=  ]]>now()
+		ORDER BY update_date ASC;
+	</select>
+
+	<select id="getRoomOffList" resultType="RoomVO">
+		SELECT ro.room_id,
+		ro.start_date,
+		ro.end_date,
+		ro.disabled_reason,
+		r.room_name
+		FROM
+		room_off_tb ro, room_tb r
+		WHERE ro.room_id=r.room_id
+		AND now() BETWEEN
+		ro.start_date AND ro.end_date
+		ORDER BY ro.room_id;
+	</select>
+
+	<select id="offRoom" resultType="RoomVO">
+		SELECT r.room_id, r.room_name
+		FROM room_tb r
+		WHERE r.room_id NOT IN (
+		SELECT d.room_id
+		FROM room_off_tb
+		d
+		WHERE STR_TO_DATE(#{selectDay}, '%Y-%m-%d') BETWEEN d.start_date AND
+		d.end_date
+		)
+		ORDER BY r.room_id ASC
+	</select>
+
+	<insert id="insSeat">
+		INSERT INTO seat_tb
+		(room_id,seat_location,seat_status)
+		VALUES
+		(#{roomId},#{roomLocation},1);
+	</insert>
+
+	<select id="getReservedCount" resultType="int">
+		SELECT COUNT(*) FROM
+		reservation_tb
+		WHERE seat_id = #{seatId}
+		AND DATE(reserv_date) =
+		STR_TO_DATE(#{selectDay}, '%Y-%m-%d')
+		AND (TIME(start_time) <![CDATA[ <=  ]]>
+		TIME(#{selectStart}) OR TIME(end_time) <![CDATA[ >=  ]]>
+		TIME(#{selectEnd}))
+	</select>
+
+	<insert id="updStudyRoom">
+		INSERT INTO studyroom_update_tb (
+		studyroom_id,
+		update_date,
+		update_reason,
+		open_time,
+		close_time
+		) VALUES (
+		1,
+		STR_TO_DATE(#{selectDay}, '%Y-%m-%d'),
+		#{reason},
+		STR_TO_DATE(#{selectStart}, '%Y-%m-%d %H:%i:%s'),
+		STR_TO_DATE(#{selectEnd}, '%Y-%m-%d %H:%i:%s')
+		)
+	</insert>
+
+	<update id="cancelByManager">
+		UPDATE reservation_tb
+		SET reserv_status = 0
+		WHERE
+		(start_time BETWEEN STR_TO_DATE(#{selectStart}, '%Y-%m-%d %H:%i:%s')
+		AND STR_TO_DATE(#{selectEnd}, '%Y-%m-%d %H:%i:%s'))
+		OR (end_time
+		BETWEEN STR_TO_DATE(#{selectStart}, '%Y-%m-%d %H:%i:%s')
+		AND
+		STR_TO_DATE(#{selectEnd}, '%Y-%m-%d %H:%i:%s'))
+		OR
+		(STR_TO_DATE(#{selectEnd}, '%Y-%m-%d %H:%i:%s') <![CDATA[ <=  ]]> start_time)
+		OR
+		(STR_TO_DATE(#{selectStart}, '%Y-%m-%d %H:%i:%s') <![CDATA[ >=  ]]> end_time)
+		AND
+		DATE(reserv_create_at) = STR_TO_DATE(#{selectDay}, '%Y-%m-%d')
+		AND
+		DATE(reserv_create_at) <![CDATA[ >=  ]]> CURDATE()
+	</update>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+	<settings><setting name="mapUnderscoreToCamelCase" value="true"/></settings>
+    <typeAliases>
+		<typeAlias alias="boardVo" type="egovframework.fusion.board.vo.BoardVO"/>
+		<typeAlias alias="userVo" type="egovframework.fusion.user.vo.UserVO"/>
+		<typeAlias alias="commentVo" type="egovframework.fusion.comment.vo.CommentVO"/>
+		<typeAlias alias="galleryVo" type="egovframework.fusion.gallery.vo.GalleryVO"/>
+		<typeAlias alias="FileVo" type="egovframework.fusion.gallery.vo.FileVO"/>
+		<typeAlias alias="LikeVo" type="egovframework.fusion.gallery.vo.LikeVO"/>
+		<typeAlias alias="TagVo" type="egovframework.fusion.gallery.vo.TagVO"/>
+		<typeAlias alias="SurveyInfoVo" type="egovframework.fusion.survey.vo.SurveyInfoVO"/>
+		<typeAlias alias="QuestionVo" type="egovframework.fusion.survey.vo.QuestionVO"/>
+		<typeAlias alias="ChoiceVo" type="egovframework.fusion.survey.vo.ChoiceVO"/>
+		<typeAlias alias="AnswerVo" type="egovframework.fusion.survey.vo.AnswerVO"/>
+		<typeAlias alias="MenuVo" type="egovframework.fusion.main.vo.MenuVO"/>
+		<typeAlias alias="MenuLogVo" type="egovframework.fusion.main.vo.MenuLogVO"/>
+		<typeAlias alias="MainCodeVo" type="egovframework.fusion.main.vo.MainCodeVO"/>
+		<typeAlias alias="SubCodeVo" type="egovframework.fusion.main.vo.SubCodeVO"/>
+		<typeAlias alias="FollowVo" type="egovframework.fusion.sns.vo.FollowVO"/>
+		<typeAlias alias="ProgressBoardVo" type="egovframework.fusion.progressBoard.vo.ProgressBoardVO"/>
+		<typeAlias alias="ProgressResponseVo" type="egovframework.fusion.progressBoard.vo.ProgressResponseVO"/>
+		<typeAlias alias="ReservationVo" type="egovframework.fusion.studyRoom.vo.ReservationVO"/>
+		<typeAlias alias="RoomVo" type="egovframework.fusion.studyRoom.vo.RoomVO"/>
+		<typeAlias alias="SeatVo" type="egovframework.fusion.studyRoom.vo.SeatVO"/>
+		<typeAlias alias="StudyRoomVo" type="egovframework.fusion.studyRoom.vo.StudyRoomVO"/>
+		<typeAlias alias="BlogUserVo" type="egovframework.fusion.blog.user.vo.BlogUserVO"/>
+		<typeAlias alias="PostVo" type="egovframework.fusion.blog.myPage.vo.PostVO"/>
+    	<typeAlias alias="BlogCategoryVo" type="egovframework.fusion.blog.myPage.vo.BlogCategoryVO"/>
+    	<typeAlias alias="ViewVo" type="egovframework.fusion.blog.myPage.vo.ViewVO"/>
+    	<typeAlias alias="VisitVo" type="egovframework.fusion.blog.myPage.vo.VisitVO"/>
+    	<typeAlias alias="SubscribeVo" type="egovframework.fusion.blog.myPage.vo.SubscribeVO"/>
+    	<typeAlias alias="BlogCommentVo" type="egovframework.fusion.blog.myPage.vo.BlogCommentVO"/>
+    	<typeAlias alias="ChattingVo" type="egovframework.fusion.blog.myPage.vo.ChattingVO"/>
+    	<typeAlias alias="BlogLikeVo" type="egovframework.fusion.blog.myPage.vo.BlogLikeVO"/>
+    </typeAliases>
+</configuration>

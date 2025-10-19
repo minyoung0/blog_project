@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.fusion.sns.service.SnsMapper">
+
+	<insert id="insertPost" parameterType="boardVo"
+		keyProperty="board_id">
+		INSERT INTO Board
+		(
+		parent_board_id,
+		board_ref,
+		board_ref_seq,
+		board_type,
+		popup_yn,
+		board_title,
+		board_content,
+		board_regist_datetime,
+		deleteYn,
+		user_id,
+		menuId,
+		board_type_id,
+		scrap_from_user_id
+		)
+		VALUES (
+		0,
+		0,
+		0,
+		'sns_board',
+		0,
+		#{boardTitle},
+		#{boardContent},
+		now(),
+		0,
+		#{userId},
+		88,
+		6,
+		(#{scrapFromUserId,jdbcType=VARCHAR})
+		);
+	</insert>
+
+	<insert id="insertFile" parameterType="FileVO">
+		INSERT INTO BoardFile
+		(board_Id, originalName,storedName,
+		filePath)
+		VALUES
+		(#{boardId},
+		#{originalName},#{storedName},
+		#{filePath});
+	</insert>
+
+	<select id="getBoardList" resultType="boardVo"
+		parameterType="map">
+		SELECT
+		b.BOARD_ID,
+		b.PARENT_BOARD_ID,
+		b.BOARD_TITLE,
+		b.BOARD_CONTENT,
+		b.BOARD_TYPE,
+		DATE_FORMAT(b.BOARD_REGIST_DATETIME, '%Y/%m/%d') AS boardRegistDateTime,
+		b.USER_ID,
+		b.SCRAP_FROM_USER_ID,
+		u.user_name,
+		u.access_right AS userAccessRight
+		FROM BOARD b
+		JOIN board_user u ON b.user_id = u.user_id
+		WHERE b.DELETEYN = 0
+		AND b.BOARD_TYPE_ID = 6
+
+		<if test="searchType != '' and searchType == 'writer'">
+			AND b.user_id LIKE CONCAT('%', #{keyword, jdbcType=VARCHAR}, '%')
+		</if>
+		<if test="searchType != '' and searchType == 'content'">
+			AND b.board_content LIKE CONCAT('%', #{keyword, jdbcType=VARCHAR}, '%')
+		</if>
+		<if test="searchType != '' and searchType == 'writeDate'">
+			AND DATE_FORMAT(b.board_regist_datetime, '%Y-%m-%d')<![CDATA[ >=  ]]> #{startDate,
+			jdbcType=VARCHAR}
+			AND DATE_FORMAT(b.board_regist_datetime, '%Y-%m-%d')<![CDATA[  <=  ]]> #{endDate,
+			jdbcType=VARCHAR}
+		</if>
+
+		ORDER BY b.board_regist_datetime DESC
+		LIMIT #{pageSize} OFFSET #{offset};
+
+
+	</select>
+
+	<select id="getFileList" parameterType="int" resultType="FileVO">
+		SELECT *
+		FROM BOARDFILE
+		WHERE BOARD_Id=#{boardId} AND
+		FILEDELETEYN=0
+	</select>
+
+	<select id="getCommentById" parameterType="int"
+		resultType="CommentVO">
+		select * from board_comment where board_id=#{boardId}
+		and
+		delete_yn=0;
+	</select>
+
+	<update id="deleteBoard" parameterType="int">
+		update board set
+		deleteYn=1 where board_id=#{boardId};
+
+	</update>
+
+
+	<update id="deleteComment" parameterType="int">
+		update board_comment
+		set delete_Yn=1 where comment_id=#{commentId};
+
+	</update>
+
+	<select id="getBoardDetail" parameterType="int"
+		resultType="BoardVO">
+		select * from board
+		where board_id=#{boardId}
+	</select>
+
+	<update id="updComment" parameterType="CommentVO">
+		update board_comment set
+		Comment_content=#{commentContent},comment_update_dateTime=now()
+		where comment_id=#{commentId}
+	</update>
+
+	<update id="deleteFile">
+		update boardfile set filedeleteYn=1 where
+		filePath=#{filePath} and board_Id=#{boardId}
+	</update>
+
+	<select id="getFileCount" parameterType="int" resultType="int">
+		select
+		count(*) from boardFile where board_Id=#{boardId}
+		and filedeleteYN=0
+	</select>
+
+	<update id="updBoard" parameterType="BoardVO">
+		update board set
+		board_title=#{boardTitle},
+		board_content=#{boardContent},board_update_datetime=now()
+		where
+		board_Id=#{boardId}
+	</update>
+
+
+	<select id="searchResultList" parameterType="string"
+		resultType="BoardVO">
+	<![CDATA[
+			
+		select * from board
+		where
+		<if test="searchType=='writer'">
+			user_id Like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType=='content'">
+			board_content Like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType=='writeDate'">
+			#{startDate} <=  TO_CHAR(board_regist_datetime,'yyyy-mm-dd')  and #{endDate} >= TO_CHAR(board_regist_datetime,'yyyy-mm-dd')
+		</if>
+		and menuId=88 and deleteYn=0
+		  ]]>
+	</select>
+
+	<insert id="followRequest" parameterType="string">
+		insert into follow (
+		follower_id,
+		following_id,
+		follow_status,
+		follow_create_at
+		)values(
+		#{followerId},
+		#{followingId},
+		2,
+		now()
+		)
+	</insert>
+
+	<select id="getFollowRequest" parameterType="string"
+		resultType="FollowVO">
+		select * from follow
+		where follower_id=#{userId}
+		and
+		follow_status=2
+	</select>
+
+	<update id="followRequestYes" parameterType="string">
+		update follow set
+		follow_status=1,follow_update_at=now()
+		where
+		follower_id=#{userId} and
+		following_id=#{followerId}
+	</update>
+
+	<insert id="addFollowRequest" parameterType="string">
+		insert into follow (
+		follower_id,
+		following_id,
+		follow_status,
+		follow_create_at
+		)values(
+		#{followerId},
+		#{userId},
+		1,
+		now()
+		)
+	</insert>
+
+	<update id="followRequestNo" parameterType="string">
+		update follow set
+		follow_status=0,follow_update_at=now() where
+		follower_id=#{userId}
+		and following_id=#{followerId}
+
+	</update>
+
+	<select id="getFollowStatus" parameterType="string"
+		resultType="Integer">
+		select follow_status from follow where
+		follower_id=#{boardUserId} and following_id=#{userId}
+	</select>
+
+	<select id="getFollowerList" parameterType="string"
+		resultType="FollowVO">
+		select following_id from follow where
+		follower_id=#{userId}
+		and follow_status=2 or follower_id=#{userId} and follow_status=1
+	</select>
+
+	<select id="getFollowingList" parameterType="string"
+		resultType="FollowVO">
+		select follower_id from follow where
+		following_id=#{userId}
+		and follow_status=2 or following_id=#{userId} and
+		follow_status=1;
+	</select>
+
+	<delete id="followCancel" parameterType="string">
+		delete from follow where
+		following_id=#{userId} and
+		follower_id=#{followerId}
+	</delete>
+
+	<select id="getUserAccessRight" parameterType="string"
+		resultType="string">
+		select access_right from board_user where user_id=#{userId}
+	</select>
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.fusion.user.service.UserMapper">
+
+  <insert id="insUser" parameterType="userVo">
+  
+  INSERT INTO BOARD_USER
+   (USER_ID,
+   USER_NAME,
+   USER_PASSWORD)
+   VALUES
+   (#{userId},
+   #{userName},
+   #{userPassword}
+   );
+  </insert>
+  
+  <select id="login" parameterType="userVo" resultType="userVo">
+  	SELECT user_id, user_password,access_right FROM BOARD_USER
+  	WHERE user_id=#{userId}
+  	AND user_password=#{userPassword};
+  </select>
+  
+  <select id="getUserById" resultType="userVo">
+   SELECT USER_ID,USER_PASSWORD,access_right
+   FROM BOARD_USER
+   WHERE user_id=#{userId};  
+  </select>
+  
+ 
+</mapper>

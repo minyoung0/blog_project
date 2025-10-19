@@ -1,0 +1,589 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.fusion.main.service.MainMapper">
+
+	<select id="getMenuList" parameterType="menuVO"
+		resultType="menuVO">
+		SELECT m.menu_name,
+		m.menu_url,
+		m.menu_ref,
+		m.menu_accessRight,
+		m.menu_id,
+		m.boardType_id,
+		m.delete_yn,
+		bt.boardType_name AS boardtypeName
+		FROM menu m
+		LEFT JOIN board_Type bt ON m.boardType_id = bt.boardType_id
+		WHERE m.delete_yn = 0
+		ORDER BY m.menu_createat DESC;
+	</select>
+
+	<select id="getMenuListModel" resultType="menuVO">
+		SELECT m.menu_name,
+		m.menu_url,
+		m.menu_ref,
+		m.menu_accessRight,
+		m.menu_id,
+		m.boardType_id,
+		m.delete_yn,
+		bt.boardType_name AS boardtypeName
+		FROM menu m
+		LEFT JOIN board_Type bt ON m.boardType_id = bt.boardType_id
+		WHERE m.delete_yn = 0;
+	</select>
+
+	<select id="getAllMenuList" parameterType="menuVO"
+		resultType="menuVO">
+		SELECT m.menu_name,
+		m.menu_url,
+		m.menu_ref,
+		m.menu_accessRight,
+		m.menu_id,
+		m.boardType_id,
+		m.delete_yn,
+		bt.boardType_name AS boardtypeName
+		FROM menu m
+		LEFT JOIN board_Type bt ON m.boardType_id = bt.boardType_id
+		ORDER BY m.delete_yn, m.menu_createAt
+		LIMIT #{startRow}, #{limit}; <!-- MySQL에서는 OFFSET 없이 LIMIT 사용 가능 -->
+	</select>
+
+	<select id="getAllMenuListWithNoPaging" resultType="MenuVO">
+		SELECT menu_url FROM menu;
+	</select>
+
+	<insert id="addMenu" parameterType="map">
+		<selectKey keyProperty="menuId" resultType="int"
+			order="BEFORE">
+		 SELECT IFNULL(MAX(menu_id), 0) + 1 FROM menu;
+		</selectKey>
+
+		INSERT INTO menu (
+		menu_name,
+		menu_url,
+		menu_createat,
+		menu_accessRight,
+		delete_yn,
+		boardtype_id,
+		user_id
+		) VALUES (
+		#{menuName},
+		CONCAT(#{menuUrl}, '?menuId=',#{menuId}),
+		NOW(),
+		#{accessRight},
+		0,
+		#{boardtypeId},
+		'admin'
+		);
+	</insert>
+
+	<update id="menuModify" parameterType="map">
+		UPDATE menu SET
+		menu_name = #{menuName},
+		menu_accessRight = #{accessRight},
+		delete_yn = #{deleteYn}
+		WHERE menu_id = #{menuId};
+	</update>
+
+	<update id="checkDelMenu" parameterType="list">
+		UPDATE menu SET delete_yn = 1
+		WHERE menu_id IN
+		<foreach item="menuId" collection="list" open="("
+			separator="," close=")">
+			#{menuId}
+		</foreach>
+		;
+	</update>
+
+	<select id="getTotalMenuCount" parameterType="menuVO"
+		resultType="int">
+		SELECT COUNT(*) FROM menu;
+	</select>
+
+	<select id="getMenuAccessRightByUrl" parameterType="String"
+		resultType="string">
+		SELECT menu_accessRight FROM menu
+		WHERE menu_url = #{menuUrl};
+	</select>
+
+	<select id="getMenuAccessRightById" parameterType="int"
+		resultType="string">
+		SELECT menu_accessRight FROM menu
+		WHERE menu_id = #{menuId};
+	</select>
+
+	<select id="getMenuAccessRight" parameterType="int"
+		resultType="string">
+		SELECT menu_accessRight FROM menu WHERE menu_id = #{menuId};
+	</select>
+
+	<!-- 로그 insert -->
+	<insert id="saveAccessLog" parameterType="MenuLogVo">
+		INSERT INTO menu_accesslog (access_date, menu_id, user_id)
+		VALUES (STR_TO_DATE(NOW(), '%Y-%m-%d %H:%i:%s'), #{menuId}, #{userId});
+	</insert>
+
+	<!-- 월별 통계 -->
+	<select id="getMonthlyDataByYear" parameterType="int"
+		resultType="java.util.HashMap">
+		SELECT m.menu_name AS menuName,
+		IFNULL(SUM(CASE WHEN MONTH(ml.access_date) = 1 THEN 1 ELSE 0 END), 0) AS "January",
+		IFNULL(SUM(CASE WHEN MONTH(ml.access_date) = 2 THEN 1 ELSE 0 END), 0)
+		AS "February",
+		IFNULL(SUM(CASE WHEN MONTH(ml.access_date) = 3 THEN 1 ELSE 0 END), 0) AS "March",
+		IFNULL(SUM(CASE WHEN MONTH(ml.access_date) = 4 THEN 1 ELSE 0 END), 0)
+		AS "April",
+		IFNULL(SUM(CASE WHEN MONTH(ml.access_date) = 5 THEN 1 ELSE 0 END), 0) AS "May",
+		IFNULL(SUM(CASE WHEN MONTH(ml.access_date) = 6 THEN 1 ELSE 0 END), 0)
+		AS "June",
+		IFNULL(SUM(CASE WHEN MONTH(ml.access_date) = 7 THEN 1 ELSE 0 END), 0) AS "July",
+		IFNULL(SUM(CASE WHEN MONTH(ml.access_date) = 8 THEN 1 ELSE 0 END), 0)
+		AS "August",
+		IFNULL(SUM(CASE WHEN MONTH(ml.access_date) = 9 THEN 1 ELSE 0 END), 0) AS "September",
+		IFNULL(SUM(CASE WHEN MONTH(ml.access_date) = 10 THEN 1 ELSE 0 END), 0)
+		AS "October",
+		IFNULL(SUM(CASE WHEN MONTH(ml.access_date) = 11 THEN 1 ELSE 0 END), 0) AS "November",
+		IFNULL(SUM(CASE WHEN MONTH(ml.access_date) = 12 THEN 1 ELSE 0 END), 0)
+		AS "December"
+		FROM menu_accesslog ml
+		RIGHT JOIN menu m ON ml.menu_id = m.menu_id
+		WHERE YEAR(ml.access_date) = #{year}
+		GROUP BY m.menu_name ORDER BY menuName;
+	</select>
+
+	<!-- 최근 3년 데이터 -->
+	<select id="recentThreeYear" parameterType="int"
+		resultType="java.util.HashMap">
+		SELECT m.menu_name AS menuName,
+		IFNULL(SUM(CASE WHEN YEAR(ml.access_date) = #{thisYear} THEN 1 ELSE 0 END), 0) AS
+		thisYear,
+		IFNULL(SUM(CASE WHEN YEAR(ml.access_date) = #{thisYearMOne} THEN 1 ELSE 0 END), 0) AS
+		thisYearMOne,
+		IFNULL(SUM(CASE WHEN YEAR(ml.access_date) = #{thisYearMTwo} THEN 1 ELSE 0 END), 0) AS
+		thisYearMTwo
+		FROM menu m
+		LEFT JOIN menu_accesslog ml ON m.menu_id = ml.menu_id
+		GROUP BY m.menu_name
+		ORDER BY menuName;
+	</select>
+
+	<!-- 일별 통계 -->
+	<select id="getDailyData" parameterType="int"
+		resultType="java.util.HashMap">
+		SELECT 
+		    m.menu_name AS menuName,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 1 THEN 1 ELSE 0 END), 0) AS day1,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 2 THEN 1 ELSE 0 END), 0) AS day2,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 3 THEN 1 ELSE 0 END), 0) AS day3,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 4 THEN 1 ELSE 0 END), 0) AS day4,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 5 THEN 1 ELSE 0 END), 0) AS day5,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 6 THEN 1 ELSE 0 END), 0) AS day6,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 7 THEN 1 ELSE 0 END), 0) AS day7,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 8 THEN 1 ELSE 0 END), 0) AS day8,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 9 THEN 1 ELSE 0 END), 0) AS day9,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 10 THEN 1 ELSE 0 END), 0) AS day10,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 11 THEN 1 ELSE 0 END), 0) AS day11,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 12 THEN 1 ELSE 0 END), 0) AS day12,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 13 THEN 1 ELSE 0 END), 0) AS day13,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 14 THEN 1 ELSE 0 END), 0) AS day14,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 15 THEN 1 ELSE 0 END), 0) AS day15,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 16 THEN 1 ELSE 0 END), 0) AS day16,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 17 THEN 1 ELSE 0 END), 0) AS day17,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 18 THEN 1 ELSE 0 END), 0) AS day18,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 19 THEN 1 ELSE 0 END), 0) AS day19,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 20 THEN 1 ELSE 0 END), 0) AS day20,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 21 THEN 1 ELSE 0 END), 0) AS day21,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 22 THEN 1 ELSE 0 END), 0) AS day22,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 23 THEN 1 ELSE 0 END), 0) AS day23,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 24 THEN 1 ELSE 0 END), 0) AS day24,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 25 THEN 1 ELSE 0 END), 0) AS day25,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 26 THEN 1 ELSE 0 END), 0) AS day26,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 27 THEN 1 ELSE 0 END), 0) AS day27,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 28 THEN 1 ELSE 0 END), 0) AS day28,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 29 THEN 1 ELSE 0 END), 0) AS day29,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 30 THEN 1 ELSE 0 END), 0) AS day30,   
+		    IFNULL(SUM(CASE WHEN DAY(ml.access_date) = 31 THEN 1 ELSE 0 END), 0) AS day31   
+		FROM menu_accesslog ml   
+		RIGHT JOIN menu m ON ml.menu_id = m.menu_id   
+		WHERE YEAR(ml.access_date) = #{year}   
+		AND MONTH(ml.access_date) = #{month}   
+		AND ml.access_date IS NOT NULL   
+		GROUP BY m.menu_name   
+	</select>
+
+	<!-- 시간별 통계 -->
+	<select id="getTimeData" parameterType="int"
+		resultType="java.util.HashMap">
+			SELECT 
+			    m.menu_name AS menuName,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 0 THEN 1 ELSE 0 END), 0) AS time0,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 1 THEN 1 ELSE 0 END), 0) AS time1,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 2 THEN 1 ELSE 0 END), 0) AS time2,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 3 THEN 1 ELSE 0 END), 0) AS time3,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 4 THEN 1 ELSE 0 END), 0) AS time4,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 5 THEN 1 ELSE 0 END), 0) AS time5,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 6 THEN 1 ELSE 0 END), 0) AS time6,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 7 THEN 1 ELSE 0 END), 0) AS time7,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 8 THEN 1 ELSE 0 END), 0) AS time8,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 9 THEN 1 ELSE 0 END), 0) AS time9,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 10 THEN 1 ELSE 0 END), 0) AS time10,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 11 THEN 1 ELSE 0 END), 0) AS time11,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 12 THEN 1 ELSE 0 END), 0) AS time12,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 13 THEN 1 ELSE 0 END), 0) AS time13,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 14 THEN 1 ELSE 0 END), 0) AS time14,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 15 THEN 1 ELSE 0 END), 0) AS time15,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 16 THEN 1 ELSE 0 END), 0) AS time16,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 17 THEN 1 ELSE 0 END), 0) AS time17,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 18 THEN 1 ELSE 0 END), 0) AS time18,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 19 THEN 1 ELSE 0 END), 0) AS time19,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 20 THEN 1 ELSE 0 END), 0) AS time20,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 21 THEN 1 ELSE 0 END), 0) AS time21,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 22 THEN 1 ELSE 0 END), 0) AS time22,
+			    IFNULL(SUM(CASE WHEN HOUR(ml.access_date) = 23 THEN 1 ELSE 0 END), 0) AS time23
+			FROM menu_accesslog ml
+			RIGHT JOIN menu m ON ml.menu_id = m.menu_id
+			WHERE YEAR(ml.access_date) = #{year} 
+			AND MONTH(ml.access_date) = #{month}
+			AND DAY(ml.access_date) = #{day}
+			AND ml.access_date IS NOT NULL
+			GROUP BY m.menu_name
+			ORDER BY menuName;
+
+	</select>
+
+	<!-- 메뉴 상세 정보 -->
+	<select id="getMenuDetail" parameterType="menuVO"
+		resultType="menuVO">
+		SELECT m.menu_name AS menuName,
+		m.menu_url AS menuUrl,
+		m.menu_accessRight AS menuAccessRight,
+		m.menu_id AS menuId,
+		m.menu_createAt AS menuCreateAt,
+		m.boardType_id AS boardTypeId,
+		m.delete_yn AS deleteYn,
+		bt.boardType_name AS boardtypeName
+		FROM menu m
+		LEFT JOIN board_Type bt ON m.boardType_id = bt.boardType_id
+		WHERE m.menu_id = #{menuId};
+	</select>
+
+	<!-- 메뉴 삭제 -->
+	<delete id="deleteMenu" parameterType="int">
+		DELETE FROM menu WHERE menu_id = #{menuId};
+	</delete>
+
+	<!-- 접근 권한별 메뉴 검색 -->
+	<select id="searchBoardMenuAccessList" parameterType="String"
+		resultType="int">
+		SELECT menu_id FROM menu
+		WHERE (CASE menu_accessright
+		WHEN 'guest' THEN 0
+		WHEN 'normal' THEN 1
+		WHEN 'admin' THEN 2
+		WHEN 'superAdmin' THEN 3
+		END) &lt;=
+		(CASE #{userAccess}
+		WHEN 'guest' THEN 0
+		WHEN 'normal' THEN 1
+		WHEN 'admin' THEN 2
+		WHEN 'superAdmin' THEN 3
+		END)
+		AND boardtype_id = 1;
+	</select>
+	<!-- 중복 방문 시간별 통계 -->
+	<select id="getDuplTimeData" parameterType="int"
+		resultType="java.util.HashMap">
+		WITH DistinctLogs AS (
+		SELECT
+		ml.menu_id,
+		ml.user_id,
+		HOUR(ml.access_date) AS access_hour,
+		ROW_NUMBER() OVER (PARTITION BY ml.menu_id, ml.user_id, HOUR(ml.access_date) ORDER
+		BY ml.access_date) AS rnk
+		FROM menu_accesslog ml
+		WHERE YEAR(ml.access_date) = #{year}
+		AND MONTH(ml.access_date) = #{month}
+		AND DAY(ml.access_date) = #{day}
+		)
+		SELECT
+		m.menu_name AS menuName,
+		
+		 IFNULL(SUM(CASE WHEN HOUR(access_hour) = 0 THEN 1 ELSE 0 END), 0) AS time0,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 1 THEN 1 ELSE 0 END), 0) AS time1,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 2 THEN 1 ELSE 0 END), 0) AS time2,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 3 THEN 1 ELSE 0 END), 0) AS time3,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 4 THEN 1 ELSE 0 END), 0) AS time4,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 5 THEN 1 ELSE 0 END), 0) AS time5,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 6 THEN 1 ELSE 0 END), 0) AS time6,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 7 THEN 1 ELSE 0 END), 0) AS time7,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 8 THEN 1 ELSE 0 END), 0) AS time8,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 9 THEN 1 ELSE 0 END), 0) AS time9,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 10 THEN 1 ELSE 0 END), 0) AS time10,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 11 THEN 1 ELSE 0 END), 0) AS time11,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 12 THEN 1 ELSE 0 END), 0) AS time12,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 13 THEN 1 ELSE 0 END), 0) AS time13,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 14 THEN 1 ELSE 0 END), 0) AS time14,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 15 THEN 1 ELSE 0 END), 0) AS time15,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 16 THEN 1 ELSE 0 END), 0) AS time16,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 17 THEN 1 ELSE 0 END), 0) AS time17,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 18 THEN 1 ELSE 0 END), 0) AS time18,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 19 THEN 1 ELSE 0 END), 0) AS time19,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 20 THEN 1 ELSE 0 END), 0) AS time20,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 21 THEN 1 ELSE 0 END), 0) AS time21,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 22 THEN 1 ELSE 0 END), 0) AS time22,
+			    IFNULL(SUM(CASE WHEN HOUR(access_hour) = 23 THEN 1 ELSE 0 END), 0) AS time23
+		FROM DistinctLogs ul
+		RIGHT JOIN menu m ON ul.menu_id = m.menu_id AND ul.rnk = 1
+		GROUP BY m.menu_name
+		ORDER BY menuName;
+	</select>
+
+	<!-- 갤러리 접근 권한 메뉴 검색 -->
+	<select id="searchGalleryMenuAccessList" parameterType="String"
+		resultType="int">
+		SELECT menu_id FROM menu
+		WHERE (CASE menu_accessright
+		WHEN 'guest' THEN 0
+		WHEN 'normal' THEN 1
+		WHEN 'admin' THEN 2
+		WHEN 'superAdmin' THEN 3
+		END)
+		&lt;=
+		(CASE #{userAccess}
+		WHEN 'guest' THEN 0
+		WHEN 'normal' THEN 1
+		WHEN 'admin' THEN 2
+		WHEN 'superAdmin' THEN 3
+		END)
+		AND boardtype_id = 2;
+	</select>
+
+	<!-- 설문조사 접근 권한 메뉴 검색 -->
+	<select id="searchSurveyMenuAccessList" parameterType="String"
+		resultType="int">
+		SELECT menu_id FROM menu
+		WHERE (CASE menu_accessright
+		WHEN 'guest' THEN 0
+		WHEN 'normal' THEN 1
+		WHEN 'admin' THEN 2
+		WHEN 'superAdmin' THEN 3
+		END)
+		&lt;=
+		(CASE #{userAccess}
+		WHEN 'guest' THEN 0
+		WHEN 'normal' THEN 1
+		WHEN 'admin' THEN 2
+		WHEN 'superAdmin' THEN 3
+		END)
+		AND boardtype_id = 3;
+	</select>
+
+	<!-- 메인 코드 목록 조회 -->
+	<select id="getMainCodeList" parameterType="mainCodeVO"
+		resultType="MainCodeVO">
+		SELECT
+		main_code_id,
+		main_code_name,
+		main_code_description,
+		DATE_FORMAT(create_at, '%Y/%m/%d') AS createAt,
+		delete_yn,
+		created_by
+		FROM main_code
+		ORDER BY main_code_id;
+	</select>
+
+	<!-- 서브 코드 목록 조회 -->
+	<select id="getSubCodeList" parameterType="subCodeVO"
+		resultType="SubCodeVO">
+		SELECT
+		main_code_id,
+		sub_code_id,
+		sub_code_name,
+		sub_code_description,
+		DATE_FORMAT(create_at, '%Y/%m/%d') AS createAt,
+		delete_yn,
+		seq_sub_code_id
+		FROM sub_code
+		ORDER BY sub_code_id;
+	</select>
+
+	<!-- 메인 코드 ID 목록 조회 -->
+	<select id="getMainCodeIdsList" parameterType="mainCodeVO"
+		resultType="string">
+		SELECT main_code_id FROM main_code
+		WHERE delete_yn = 0
+		ORDER BY main_code_id;
+	</select>
+
+	<!-- 메인 코드 추가 -->
+	<insert id="insNewMainCode" parameterType="mainCodeVO">
+		INSERT INTO main_code (
+		main_code_id,
+		main_code_name,
+		main_code_description,
+		create_at,
+		created_by,
+		delete_yn
+		) VALUES (
+		#{mainCodeId},
+		#{mainCodeName},
+		#{mainCodeDescription},
+		NOW(),
+		#{userId},
+		0
+		);
+	</insert>
+
+	<!-- 서브 코드 ID 목록 조회 -->
+	<select id="getSubCodeIdsList" parameterType="string"
+		resultType="int">
+		SELECT sub_code_id FROM sub_code
+		WHERE main_code_id = #{mainCodeId};
+	</select>
+
+	<!-- 서브 코드 추가 -->
+	<insert id="insNewSubCode" parameterType="subCodeVO">
+		INSERT INTO sub_code (
+		main_code_id,
+		sub_code_id,
+		sub_code_name,
+		sub_code_description,
+		create_at,
+		created_by,
+		delete_yn
+		) VALUES (
+		#{mainCodeId},
+		#{subCodeId},
+		#{subCodeName},
+		#{subCodeDescription},
+		NOW(),
+		#{userId},
+		0
+		);
+	</insert>
+
+	<!-- 특정 메인 코드 상세 조회 -->
+	<select id="getMenuDetailById" resultType="mainCodeVO"
+		parameterType="string">
+		SELECT * FROM main_code WHERE main_code_id = #{codeId};
+	</select>
+
+	<!-- 메인 코드 수정 -->
+	<update id="updNewMainCode" parameterType="mainCodeVO">
+		UPDATE main_code
+		SET
+		main_code_name = #{mainCodeName},
+		main_code_description = #{mainCodeDescription},
+		update_at = NOW(),
+		updated_by = #{userId},
+		delete_yn = #{deleteYn}
+		WHERE main_code_id = #{mainCodeId};
+	</update>
+
+
+	<!-- 서브 코드 삭제 여부 업데이트 -->
+	<update id="updSubCodeWithMainCode">
+		UPDATE sub_code
+		SET delete_yn = #{deleteYn2}
+		WHERE main_code_id = #{mainCodeId};
+	</update>
+
+	<!-- 특정 메인 코드에 속한 서브 코드 개수 카운트 -->
+	<select id="cntSubCode" parameterType="string" resultType="int">
+		SELECT COUNT(*)
+		FROM sub_code
+		WHERE main_code_id = #{id};
+	</select>
+
+	<!-- 메인 코드 삭제 체크 -->
+	<update id="checkDelMainCode" parameterType="string">
+		UPDATE main_code
+		SET delete_yn = 1
+		WHERE main_code_id = #{id};
+	</update>
+
+	<!-- 특정 서브 코드 상세 정보 조회 -->
+	<select id="getSubMenuDetailById" resultType="subCodeVO">
+		SELECT *
+		FROM sub_code
+		WHERE main_code_id = #{codeId}
+		AND sub_code_id = #{subCodeId};
+	</select>
+
+	<!-- 서브 코드 정보 수정 -->
+	<update id="updNewSubCode" parameterType="subCodeVO">
+		UPDATE sub_code
+		SET
+		sub_code_name = #{subCodeName},
+		sub_code_description = #{subCodeDescription},
+		update_at = NOW(),
+		updated_by = #{userId},
+		delete_yn = #{deleteYn}
+		WHERE main_code_id = #{mainCodeId}
+		AND sub_code_id = #{subCodeId};
+	</update>
+
+	<!-- 서브 코드 삭제 체크 (여러 개) -->
+	<update id="checkDelSubCode" parameterType="list">
+		UPDATE sub_code
+		SET delete_yn = 1
+		WHERE seq_sub_code_id IN
+		<foreach item="subCodeId" collection="list" open="("
+			separator="," close=")">
+			#{subCodeId}
+		</foreach>
+		;
+	</update>
+
+	<!-- 금칙어 목록 조회 -->
+	<select id="getBadWordsList" resultType="java.util.HashMap"
+		parameterType="string">
+		SELECT sub_code_name
+		FROM sub_code
+		WHERE main_code_id = #{codeName}
+		AND delete_yn = 0;
+	</select>
+
+	<!-- 메인 코드 검색 (ID 또는 이름) -->
+	<select id="searchMainCode" parameterType="string"
+		resultType="MainCodeVO">
+		SELECT *
+		FROM main_code
+		WHERE
+		<if test="searchType == 'codeId'">
+			main_code_id LIKE CONCAT('%', #{keyword}, '%')
+		</if>
+		<if test="searchType == 'codeName'">
+			main_code_name LIKE CONCAT('%', #{keyword}, '%')
+		</if>
+		;
+	</select>
+
+	<!-- 최고 관리자 목록 조회 -->
+	<select id="getAdminList" resultType="UserVO">
+		SELECT *
+		FROM board_user
+		WHERE access_right = 'superAdmin';
+	</select>
+
+</mapper>
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

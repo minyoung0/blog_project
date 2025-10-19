@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.fusion.blog.myPage.service.MyPageMapper">
+	<insert id="insertPost" parameterType="postVo">
+		insert into 
+		tb_post(
+			user_id,
+			category_id,
+			title,
+			content,
+			create_at,
+			visibility,
+			delete_yn
+		)values(
+			#{userId},
+			#{categoryId},
+			#{title},
+			#{content},
+			now(),
+			#{visibility},
+			'N'
+		)
+	</insert>
+	
+	<select id="getPostId" resultType="int">
+		select post_id from tb_post
+		where user_id=#{userId}
+		order by create_at DESC limit 1
+	</select>
+	
+	<insert id="insertPostImage" >
+		insert into tb_postimage(
+			image_path,
+			post_id,
+			create_at,
+			delete_yn
+		)values(
+			#{filePath},
+			#{postId},
+			now(),
+			'N'
+		)
+	</insert>
+	
+	<select id="getTotalPost" resultType="int">
+		select count(*) from tb_post
+		where user_id=#{userId} 
+		<if test="categoryId !=0 ">
+	   	And category_id=#{categoryId}
+	   </if>
+	   	and delete_yn='N'
+	</select>
+	
+	<select id="getPostListWithPaging" parameterType="PostVo" resultType="PostVo">
+	  SELECT p.post_id,
+	    p.category_id,
+	    p.user_id,
+	    u.nickname,
+	    p.title,
+	    p.content,
+	    p.create_at,
+	    p.update_at,
+	    p.visibility,
+	    p.delete_yn,
+	    count(v.view_id) as viewCount
+	   FROM tb_post p
+	   left join tb_user u
+    	on u.user_id=p.user_id
+		left join tb_view v
+		on p.post_id=v.post_id
+	   WHERE p.user_id = #{userId}
+	   <if test="categoryId !=0 ">
+	   	And p.category_id=#{categoryId}
+	   </if>
+	   <if test="blogUserId != '' ">
+	   	And p.user_id=#{blogUserId}
+	   </if>
+	   And p.delete_yn='N'
+	   GROUP BY 
+	   	p.post_id,
+	    p.category_id, 
+	    p.user_id, 
+	    u.nickname,
+	    p.title, 
+        p.content,
+        p.create_at, 
+        p.update_at, 
+        p.visibility, 
+        p.delete_yn
+	   ORDER BY create_at DESC
+	   LIMIT #{startRow}, #{limit} 
+	</select>
+	
+	<select id="getPostDetail" resultType="PostVo">
+		select p.post_id,
+			p.category_id,
+			p.category_id,
+			p.title,
+			p.content,
+			p.create_at,
+			count(v.view_id),
+			u.nickName 
+			from tb_post p 
+			left join tb_view v on p.post_id =v.post_id
+			left join tb_user u on p.user_id =u.user_id 
+		where p.post_id=#{postId}
+	</select>
+	
+	<select id="getCategory" resultType="BlogCategoryVo">
+		select * from tb_blogcategory
+		where user_id=#{userId}
+	</select>
+	
+	<select id="existingView" resultType="ViewVo">
+		select * from tb_view
+		where user_id=#{userId} and post_id=#{postId} and ip_address=#{clientIp}
+	</select>
+	
+	<insert id="addViewCount">
+		insert into tb_view
+		(post_id,user_id,viewed_date,ip_address)values(#{postId},#{userId},now(),#{clientIp})
+	</insert>
+	
+	<select id="getCategoryName" resultType="BlogCategoryVo">
+		select * from tb_blogcategory
+		where category_id=#{categoryId}
+	</select>
+	
+	<insert id="addCategory">
+		insert into tb_blogcategory
+		(category_name,
+		visibility,
+		user_id,
+		create_at,
+		disable_yn
+		)values(
+		#{categoryName},
+		#{visibility},
+		#{userId},
+		now(),
+		'Y'
+		)
+	</insert>
+	
+	
+	<select id="getTotalList" resultType="PostVo">
+		select p.post_id,
+	p.category_id,
+	p.user_id,
+	p.title,
+	p.content,
+	p.create_at,
+	p.visibility,
+	p.delete_yn,
+	u.nickName,
+	u.profile_image
+	from tb_post p
+	left join tb_user u on p.user_id=u.user_id 
+	where delete_yn='N' and visibility ="public"
+	order by create_at desc
+	</select>
+	
+	<select id="existVisit" parameterType="VisitVo" resultType="int">
+		select count(*) from tb_visit
+		where (visit_date=#{visitDate} and visitor_id=#{visitorId} and blog_user_id=#{blogUserId})
+		or (visit_date=#{visitDate} and visitor_ip=#{visitorIp} and blog_user_id=#{blogUserId}) 
+	</select>
+		 
+	 <insert id="addVisit" parameterType="VisitVo">
+	 	insert into tb_visit(
+	 	blog_user_id,
+	 	visitor_id,
+	 	visitor_ip,
+	 	visit_date,
+	 	test_date
+	 	)values(
+	 	#{blogUserId},
+	 	#{visitorId},
+	 	#{visitorIp},
+	 	#{visitDate},
+	 	now()
+	 	)
+	 </insert>
+	 
+	 <select id="todayVisit" parameterType="String" resultType="int">
+	 	select count(*) from tb_visit 
+		where visit_date = #{today}
+		and 
+		blog_user_id=#{blogUserId}
+	 </select>
+	 
+	 <select id= "totalVisit" parameterType="String" resultType="int">
+	 	select count(*) from tb_visit
+	 	where blog_user_id=#{blogUserId}
+	 </select>
+	 
+	 <insert id="subscribe" parameterType="String">
+	 	insert into tb_subscription(
+	 		subscriber_id,
+	 		blog_owner_id,
+	 		subscribed_at,
+	 		status
+	 	)values(
+	 	#{userId},
+	 	#{blogOwnerId},
+	 	now(),
+	 	'active'
+	 	)
+	 </insert>
+	 
+	 <select id="getStatus" resultType="String" parameterType="String">
+	 	select status from tb_subscription
+	 	where blog_owner_id=#{blogUserId}
+	 	and subscriber_id=#{userId}
+	 </select>
+	 
+	 <select id="getVisitStats" resultType="VisitVo">
+	 	WITH RECURSIVE date_range AS (
+		    SELECT DATE(#{startDate}) AS visit_date  
+		    UNION ALL
+		    SELECT visit_date + INTERVAL 1 DAY FROM date_range 
+		    WHERE visit_date <![CDATA[<]]> DATE(#{endDate})
+		)
+		SELECT d.visit_date, 
+		IFNULL(v.visitCount, 0) AS visitCount
+		FROM date_range d
+		LEFT JOIN (
+		    SELECT visit_date, COUNT(*) AS visitCount
+		    FROM tb_visit
+		    WHERE blog_user_id = #{userId} 
+		    AND visit_date BETWEEN DATE(#{startDate}) AND DATE(#{endDate})
+		    GROUP BY visit_date
+		) v ON d.visit_date = v.visit_date
+		ORDER BY d.visit_date;
+	 	
+	 </select>
+	 
+	 <select id="getVisitStatsNormal" resultType="VisitVo">
+ 	   WITH RECURSIVE date_range AS (
+		    SELECT CURDATE() - INTERVAL 9 DAY AS visit_date
+		    UNION ALL
+		    SELECT visit_date + INTERVAL 1 DAY FROM date_range WHERE visit_date <![CDATA[<]]> CURDATE()
+		)
+		SELECT d.visit_date, 
+		       IFNULL(v.visitCount, 0) AS visitCount
+		FROM date_range d
+		LEFT JOIN (
+		    SELECT visit_date, COUNT(*) AS visitCount
+		    FROM tb_visit
+		    WHERE blog_user_id = #{userId}
+		    GROUP BY visit_date
+		) v ON d.visit_date = v.visit_date
+		ORDER BY d.visit_date;
+
+	 </select>
+	 
+	 <select id="getComment" resultType="BlogCommentVo">
+	 	select c.comment_id,
+	 		c.parent_id,
+	 		c.post_id,
+	 		c.content,
+	 		c.user_id,
+	 		c.create_at,
+	 		c.update_at,
+	 		c.delete_yn,
+	 		u.nickName,
+	 		u.profile_image
+	 	from tb_comment c
+	 	left join tb_user u on c.user_id = u.user_id
+	 	where c.post_id=#{postId}
+ 		order by 
+	 		c.create_at asc;
+	 </select>
+	 
+	 <insert id="addComment" parameterType="BlogCommentVo">
+	 	insert into tb_comment
+	 	(parent_id,
+	 	post_id,
+	 	content,
+	 	user_id,
+	 	create_at,
+	 	delete_yn
+	 	)values(
+	 	#{parentId},
+	 	#{postId},
+	 	#{content},
+	 	#{userId},
+	 	now(),
+	 	'N'
+	 	)
+	 </insert>
+	 
+	 <update id="updateComment" parameterType="BlogCommentVo">
+	 	update tb_comment
+	 	set 
+	 		content=#{content},
+	 		update_at=now()
+	 	where comment_id=#{commentId}
+	 </update>
+	 
+	 <update id="deleteComment">
+	 	update tb_comment
+	 	set delete_yn='Y'
+	 	where comment_id=#{commentId}
+	 </update>
+	 
+	 <select id="getExistLike" parameterType="BlogLikeVo" resultType="String">
+	 	select cancel_yn from tb_like
+	 	where post_id=#{postId} and user_id=#{userId}
+	 </select>
+	 
+	 <update id="recoverLike" parameterType="BlogLikeVo">
+	 	update tb_like
+	 	set cancel_yn = 'N',create_date=now()
+	 	where post_id=#{postId} and user_id=#{userId}
+	 </update>
+	 
+	 <update id="cancelLike" parameterType="BlogLikeVo">
+	 	update tb_like
+	 	set cancel_yn = 'Y' , cancel_date=now()
+	 	where post_id=#{postId} and user_id=#{userId}
+	 </update>
+	 
+	 <insert id="insertLike" parameterType="BlogLikeVo">
+	 	insert into tb_like(
+	 		user_id,
+	 		post_id,
+	 		create_at,
+	 		cancel_yn
+	 	) values(
+	 		#{userId},
+	 		#{postId},
+	 		now(),
+	 		'N'
+	 	)
+	 </insert>
+</mapper>

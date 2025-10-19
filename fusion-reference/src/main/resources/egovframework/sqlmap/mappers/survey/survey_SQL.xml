@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="egovframework.fusion.survey.service.SurveyMapper">
+	<select id="getSurveyById" parameterType="int"
+		resultType="SurveyInfoVO">
+		SELECT SURVEYID as surveyId,
+		STARTDATE as startDate,
+		ENDDATE
+		as endDate,
+		ISACTIVE as isActive
+		FROM SurveyInfo
+		WHERE SURVEYId =
+		#{surveyId} AND ISACTIVE =
+		1
+	</select>
+
+	<select id="getSurveyQuestions" parameterType="int"
+		resultType="QuestionVO">
+		<!-- SELECT q.questionId, q.categoryId, qc.categoryName, q.surveyId, q.questionNumber, 
+			q.parentQuestionId, q.questionType, q.questionText, q.isRequired, q.isActive 
+			FROM Question q JOIN Question_Category qc ON q.categoryId = qc.categoryId 
+			WHERE q.isActive = 1 AND q.surveyId = #{surveyId} ORDER BY CAST(SUBSTR(q.questionNumber, 
+			1, CASE WHEN INSTR(q.questionNumber, '-') > 0 THEN INSTR(q.questionNumber, 
+			'-') - 1 ELSE LENGTH(q.questionNumber) END) AS INTEGER), CASE WHEN INSTR(q.questionNumber, 
+			'-') > 0 THEN CAST(SUBSTR(q.questionNumber, INSTR(q.questionNumber, '-') 
+			+ 1) AS INTEGER) ELSE 0 END; -->
+		SELECT
+		q.questionId,
+		q.categoryId,
+		qc.categoryName,
+		q.surveyId,
+		q.questionNumber,
+		q.parentQuestionId,
+		q.questionType,
+		q.questionText,
+		q.isRequired,
+		q.isActive
+		FROM Question q
+		JOIN Question_Category qc ON
+		q.categoryId = qc.categoryId
+		WHERE q.isActive = 1
+		AND q.surveyId =
+		#{surveyId}
+		ORDER BY
+		CAST(SUBSTRING_INDEX(q.questionNumber, '-', 1) AS
+		UNSIGNED),
+		CASE
+		WHEN INSTR(q.questionNumber, '-') > 0
+		THEN
+		CAST(SUBSTRING_INDEX(q.questionNumber, '-', -1) AS UNSIGNED)
+		ELSE 0
+		END;
+
+
+	</select>
+
+	<select id="getChoicesBySurvey" resultType="ChoiceVO"
+		parameterType="int">
+		<!-- SELECT c.choiceId, c.choiceGroupId, c.choiceText FROM Choice c LEFT 
+			JOIN Question q ON c.choiceGroupId = q.questionNumber WHERE (q.surveyId = 
+			#{surveyId} AND c.choiceGroupId = q.questionNumber) OR (c.choiceGroupId IS 
+			NULL) ORDER BY c.choiceGroupId, c.choiceId; -->
+		SELECT
+		c.choiceId,
+		c.choiceGroupId,
+		c.choiceText,
+		q.questionNumber
+		FROM
+		Choice c
+		LEFT JOIN
+		Question q
+		ON
+		c.choiceGroupId = q.questionNumber
+		WHERE
+		(c.choiceGroupId = q.questionNumber)
+		OR
+		(c.choiceGroupId IS NULL AND NOT
+		EXISTS (
+		SELECT 1
+		FROM Choice c2
+		WHERE c2.choiceGroupId =
+		q.questionNumber
+		))
+		ORDER BY
+		c.choiceGroupId,
+		c.choiceId;
+	</select>
+
+	<select id="getSurveyQuestionsWithChoices" parameterType="int"
+		resultType="QuestionVO">
+		SELECT
+		q.questionId,
+		q.categoryId,
+		qc.categoryName,
+		q.surveyId,
+		q.questionNumber,
+		q.parentQuestionId,
+		q.questionType,
+		q.questionText,
+		q.isRequired,
+		q.isActive,
+		c.choiceId,
+		c.choiceGroupId,
+		c.choiceText
+		FROM Question q
+		JOIN Question_Category qc ON q.categoryId = qc.categoryId
+		LEFT JOIN Choice c ON c.choiceGroupId = q.questionNumber
+		AND q.questionType != 'text'
+		WHERE q.isActive = 1
+		AND q.surveyId = #{surveyId}
+		ORDER BY
+		CAST(SUBSTRING_INDEX(q.questionNumber, '-', 1) AS UNSIGNED),
+		CASE
+		WHEN INSTR(q.questionNumber, '-') > 0
+		THEN CAST(SUBSTRING_INDEX(q.questionNumber, '-', -1) AS UNSIGNED)
+		ELSE 0
+		END,
+		c.choiceId;
+
+	</select>
+
+	<!-- 전체페이지 -->
+	<select id="getTotalQuestion" parameterType="int"
+		resultType="int">
+		SELECT COUNT(*)
+		FROM Question
+		WHERE surveyId = #{surveyId}
+		And isActive = 1;
+	</select>
+
+	<!-- 답변 및 응답여부 insert -->
+	<insert id="insertResponse">
+		<selectKey keyProperty="responseId" order="BEFORE"
+			resultType="int">
+			SELECT SEQ_RESPONSE.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO Response (responseId, user_id, surveyId, responseCreateAt)
+		VALUES (#{responseId}, #{userId}, #{surveyId}, #{responseCreateAt})
+	</insert>
+
+	<insert id="insertAnswer">
+		INSERT INTO Answer (answerId,responseId, questionId,
+		choiceId, answerText,etcText)
+		VALUES (SEQ_answer.nextval,#{responseId},
+		#{questionId}, #{choiceId},
+		#{answerText,jdbcType=VARCHAR},#{etcText,jdbcType=VARCHAR})
+	</insert>
+
+	<!-- 참여이력확인 -->
+	<select id="countParticipation" resultType="int">
+		Select count(*)
+		from
+		response
+		Where surveyId=#{surveyId}
+		AND user_id=#{userId}
+
+	</select>
+
+	<!-- 응답한 사람의 responseID -->
+	<select id="getResponseIdBySurveyAndUser" resultType="int">
+		SELECT
+		responseId
+		FROM response
+		WHERE surveyId = #{surveyId}
+		AND user_id =
+		#{userId}
+	</select>
+
+
+	<!-- 응답받아오기 -->
+	<select id="selectSurveyAnswers" resultType="AnswerVO">
+
+		SELECT
+		a.responseId
+		AS responseId,
+		a.questionId AS questionId,
+		a.choiceId AS choiceId,
+		a.etctext AS etcText,
+		a.answertext AS answerText
+		FROM
+		Answer a
+		JOIN
+		response r ON a.responseId = r.responseId
+		WHERE
+		r.surveyId = #{surveyId}
+		AND r.user_id = #{userId};
+	</select>
+
+	<!-- 응답 수정 날짜 변경 -->
+	<update id="updateResponse">
+		UPDATE response
+		SET
+		responseUPdateAt=#{responseUpdateAt}
+		where responseId=#{responseId}
+	</update>
+	<!-- 기존 답변 삭제 -->
+	<delete id="deleteAnswersByResponseId">
+		DELETE FROM ANSWER
+		WHERE RESPONSEID=#{responseId}
+	</delete>
+	<select id="searchSurvey" resultType="SurveyInfoVO">
+		select startdate,
+		enddate,
+		surveyName,
+		createdby
+		from surveyInfo
+		where
+		<choose>
+			<when test="searchType == 'title'">surveyname LIKE '%' || #{keyword} || '%'</when>
+			<when test="searchType == 'writer'">createdby LIKE '%' || #{keyword} || '%'</when>
+			<when test="searchType=='total'">surveyname LIKE '%' || #{keyword} || '%'</when>
+			<otherwise>
+				surveyname LIKE '%' || #{keyword} || '%'
+			</otherwise>
+		</choose>
+	</select>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

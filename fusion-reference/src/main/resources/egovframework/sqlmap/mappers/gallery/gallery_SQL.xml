@@ -1,0 +1,446 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="egovframework.fusion.gallery.service.GalleryMapper">
+
+
+	<select id="getGalleryList" resultType="galleryVO"
+		parameterType="galleryVO">
+		SELECT
+		b.board_id,
+		b.board_title,
+		b.board_content,
+		b.viewCount,
+		u.user_name AS userName,
+		IFNULL(l.likeCount, 0) AS likeCount,
+		DATE_FORMAT(b.board_regist_datetime, '%Y-%m-%d') AS board_regist_datetime,
+		(SELECT bf.filePath
+		FROM BoardFile bf
+		WHERE bf.board_id = b.board_id
+		AND bf.isThumbnail = 1
+		ORDER BY bf.fileId ASC
+		LIMIT 1) AS thumbnailPath
+		FROM Board b
+		LEFT JOIN Board_User u ON b.user_id = u.user_id
+		LEFT JOIN (
+		SELECT boardId, COUNT(*) AS likeCount
+		FROM BOARDLIKE
+		WHERE likeYn = 1
+		GROUP BY boardId
+		) l ON b.board_id = l.boardId
+		WHERE b.menuId = #{menuId}
+		AND b.deleteYn = 0
+		ORDER BY b.board_regist_datetime desc
+
+		LIMIT #{startRow}, #{limit};
+	</select>
+
+
+	<insert id="insertPost" parameterType="GalleryVO">
+		<selectKey keyProperty="boardId" resultType="int"
+			order="BEFORE">
+			SELECT IFNULL(MAX(board_id), 0) + 1 FROM Board;
+		</selectKey>
+		INSERT INTO Board (
+		board_id, parent_board_id, board_ref,
+		board_ref_seq, board_type,
+		popup_yn, board_title, board_content,
+		board_regist_datetime,
+		deleteYn, user_id, menuId, board_type_id
+		) VALUES
+		(
+		#{boardId}, 0, 0, 0, 'normal',
+		0, #{boardTitle}, #{boardContent},
+		NOW(),
+		0, #{userId}, #{menuId}, 2
+		);
+	</insert>
+
+	<insert id="insertFile" parameterType="FileVO">
+		INSERT INTO BoardFile
+		(board_Id, originalName,storedName,
+		filePath, isThumbnail)
+		VALUES
+		(#{boardId},
+		#{originalName},#{storedName},
+		#{filePath},
+		#{isThumbnail});
+	</insert>
+
+	<insert id="insertTag" parameterType="TagVO">
+		INSERT INTO BoardTag
+		(board_Id, tagName,tagDeleteYn)
+		VALUES (
+		#{boardId}, #{tagName},0);
+	</insert>
+
+	<select id="getFilesByBoardId" parameterType="int"
+		resultType="FileVO">
+		SELECT *
+		FROM BOARDFILE
+		WHERE BOARD_Id=#{boardId} AND
+		FILEDELETEYN=0
+		ORDER BY
+		ISTHUMBNAIL DESC,fileId ASC;
+	</select>
+
+	<select id="getTotalCount" parameterType="boardVO"
+		resultType="int">
+		select count(*)
+		from board
+		where board_type_Id=2 AND
+		deleteYn=0;
+	</select>
+
+	<select id="getGalleryById" resultType="GalleryVO"
+		parameterType="GalleryVO">
+		SELECT
+		b.board_id AS boardId,
+		b.board_title AS boardTitle,
+		b.board_content AS boardContent,
+		TO_CHAR(b.board_regist_datetime,
+		'YYYY-MM-DD') AS board_regist_datetime,
+		b.viewcount AS viewCount,
+		b.user_id AS userId,
+		u.user_name AS userName,
+		b.board_type_Id AS typeId
+		FROM
+		Board b
+		LEFT JOIN
+		Board_User u ON b.user_id = u.user_id
+		WHERE
+		b.board_id =
+		#{boardId}
+		AND
+		b.deleteYn = 0
+	</select>
+
+	<update id="deletePost" parameterType="int">
+		UPDATE Board
+		SET deleteYn =
+		1
+		WHERE board_id = #{boardId}
+	</update>
+
+	<select id="getTagsByBoardId" resultType="TagVO">
+		SELECT
+		tagId, board_Id,
+		tagName
+		FROM BoardTag
+		WHERE board_Id = #{boardId} AND tagDeleteYn = 0
+	</select>
+
+	<select id="getPostsByTag" resultType="GalleryVO">
+
+		SELECT b.board_id AS
+		boardId,
+		b.board_title AS boardTitle,
+		b.board_content AS boardContent,
+		b.board_regist_datetime AS boardRegistDatetime,
+		b.viewcount AS
+		viewCount,
+		b.user_id AS userId,
+		(SELECT bf.filePath
+		FROM BoardFile bf
+		WHERE bf.board_id = b.board_id
+		AND bf.isThumbnail = 1
+		AND
+		bf.fileDeleteYn = 0
+		AND ROWNUM = 1) AS thumbnailPath
+		FROM Board b
+		LEFT
+		JOIN BoardTag bt
+		ON b.board_id = bt.board_id
+		WHERE bt.tagName =
+		#{tagName}
+		AND b.deleteYn = 0
+		ORDER BY b.board_regist_datetime DESC
+
+	</select>
+
+	<select id="getThumbnailByBoardId" resultType="String">
+		SELECT
+		f.filePath
+		FROM
+		BoardFile AS f
+		WHERE
+		f.boardId = #{boardId}
+		AND f.isThumbnail = 1;
+	</select>
+
+	<select id="searchGallery" parameterType="GalleryVO"
+		resultType="GalleryVO">
+		SELECT
+		b.board_id AS boardId,
+		b.menuId,
+		b.board_title AS boardTitle,
+		b.board_content AS boardContent,
+		DATE_FORMAT(b.board_regist_datetime,
+		'%Y-%m-%d') AS boardRegistDatetime,
+		b.viewcount AS viewCount,
+		b.user_id
+		AS userId,
+		(SELECT bf.filePath
+		FROM BoardFile bf
+		WHERE bf.board_id =
+		b.board_id
+		AND bf.isThumbnail = 1
+		AND bf.fileDeleteYn = 0 LIMIT 1)
+		AS
+		thumbnailPath
+		FROM Board b
+		WHERE b.board_type_Id = 2 AND b.deleteYn = 0
+		<if test="searchType == 'title'"> AND b.board_title LIKE CONCAT('%', #{keyword}, '%')</if>
+		<if test="searchType == 'content'"> AND b.board_content LIKE CONCAT('%', #{keyword}, '%')
+		</if>
+		<if test="searchType == 'writer'"> AND b.user_id LIKE CONCAT('%', #{keyword}, '%')</if>
+		<if test="searchType == 'tag'">
+			AND EXISTS (SELECT 1 FROM BoardTag bt WHERE bt.board_id =
+			b.board_id AND
+			bt.tagName LIKE CONCAT('%', #{keyword}, '%'))
+		</if>
+		<if test="searchType == 'imgName'">
+			AND EXISTS (SELECT 1 FROM BoardFile bf WHERE bf.board_id =
+			b.board_id AND
+			bf.originalName LIKE CONCAT('%', #{keyword}, '%'))
+		</if>
+		ORDER BY b.board_regist_datetime DESC
+		LIMIT #{startRow}, #{limit};
+	</select>
+
+	<select id="searchGallery2" resultType="GalleryVO">
+		SELECT
+		b.board_id AS boardId,
+		b.menuId,
+		b.board_title AS boardTitle,
+		b.board_content AS boardContent,
+		b.board_regist_datetime AS
+		boardRegistDatetime,
+		b.viewcount AS viewCount,
+		b.user_id AS userId,
+		m.menu_Id,
+		m.menu_name,
+		(SELECT bf.filePath
+		FROM BoardFile bf
+		WHERE
+		bf.board_id = b.board_id
+		AND
+		bf.isThumbnail = 1
+		AND bf.fileDeleteYn = 0
+		AND b.board_type_Id = 2
+		AND ROWNUM =
+		1) AS thumbnailPath
+		FROM Board b
+		Left join menu m
+		on b.menuId=m.menu_Id
+		<where>
+			b.board_type_Id = 2
+			<choose>
+				<when test="searchType == 'title'">
+					AND b.board_title LIKE '%' || #{keyword} || '%'
+				</when>
+				<when test="searchType == 'content'">
+					AND b.board_content LIKE '%' || #{keyword} || '%'
+				</when>
+				<when test="searchType == 'writer'">
+					AND b.user_id LIKE '%' || #{keyword} || '%'
+				</when>
+				<when test="searchType == 'tag'">
+					AND EXISTS (
+					SELECT 1
+					FROM BoardTag bt
+					WHERE
+					bt.board_id = b.board_id
+					AND bt.tagName LIKE '%' || #{keyword} ||
+					'%'
+					)
+				</when>
+				<when test="searchType == 'imgName'">
+					AND EXISTS (
+					SELECT 1
+					FROM BoardFile bf
+					WHERE
+					bf.board_id = b.board_id
+					AND bf.originalName LIKE '%' || #{keyword}
+					|| '%'
+					)
+				</when>
+				<otherwise>
+					AND (b.board_title LIKE '%' || #{keyword} || '%'
+					OR
+					b.board_content LIKE '%' || #{keyword} || '%'
+					OR b.user_id LIKE '%'
+					|| #{keyword} || '%'
+					OR EXISTS (
+					SELECT 1
+					FROM BoardTag bt
+					WHERE
+					bt.board_id = b.board_id
+					AND bt.tagName LIKE '%' || #{keyword} ||
+					'%'
+					)
+					OR EXISTS (
+					SELECT 1
+					FROM BoardFile bf
+					WHERE bf.board_id =
+					b.board_id
+					AND bf.originalName LIKE '%' || #{keyword} || '%'
+					))
+				</otherwise>
+			</choose>
+			AND b.deleteYn = '0'
+			AND menuId in
+			<foreach item="id" collection="galleryMenuIds" open="("
+				separator="," close=")">
+				#{id}
+			</foreach>
+		</where>
+	</select>
+
+	<select id="getSearchResultCount" parameterType="GalleryVO"
+		resultType="int">
+		SELECT COUNT(*) FROM Board b
+		WHERE b.deleteYn = 0
+		<if test="searchType == 'title'"> AND b.board_title LIKE CONCAT('%', #{keyword}, '%')</if>
+		<if test="searchType == 'content'"> AND b.board_content LIKE CONCAT('%', #{keyword}, '%')
+		</if>
+		<if test="searchType == 'writer'"> AND b.user_id LIKE CONCAT('%', #{keyword}, '%')</if>
+		<if test="searchType == 'tag'">
+			AND EXISTS (SELECT 1 FROM BoardTag bt WHERE bt.board_id =
+			b.board_id AND
+			bt.tagName LIKE CONCAT('%', #{keyword}, '%'))
+		</if>
+		<if test="searchType == 'imgName'">
+			AND EXISTS (SELECT 1 FROM BoardFile bf WHERE bf.board_id =
+			b.board_id
+			AND bf.originalName LIKE CONCAT('%', #{keyword}, '%'))
+		</if>
+		;
+	</select>
+
+
+	<update id="incrementDownloadCount">
+		UPDATE BoardFile
+		SET fileDowncount = fileDowncount + 1
+		WHERE fileId = #{fileId}
+	</update>
+
+
+
+	<!-- 조회수 -->
+	<!-- 오늘의 조회 기록 확인 -->
+	<select id="checkTodayViewHistory" resultType="int">
+		SELECT COUNT(*)
+		FROM VIEWHISTORY
+		WHERE board_id = #{boardId}
+		AND user_id = #{userId}
+		AND
+		DATE(view_date) = CURDATE();
+	</select>
+
+	<!-- 조회 기록 추가 -->
+	<insert id="insertViewHistory">
+		INSERT INTO VIEWHisTORY ( board_id,
+		user_id,
+		view_date)
+		VALUES (#{boardId},
+		#{userId}, SYSDATE());
+	</insert>
+
+	<!-- 게시글 조회수 증가 -->
+	<update id="updateViewCount">
+		UPDATE Board
+		SET viewcount = viewcount + 1
+		WHERE
+		board_id = #{boardId};
+	</update>
+
+	<!-- 사진다운로드수 -->
+	<select id="getDownloadCount" resultType="int">
+		SELECT fileDowncount
+		FROM BoardFile
+		WHERE fileId = #{fileId}
+	</select>
+
+	<update id="updateDownloadCount" parameterType="int">
+		UPDATE BoardFile
+		SET fileDownCount = fileDownCount + 1
+		WHERE fileId = #{fileId}
+	</update>
+
+	<!-- 파일 삭제 처리 -->
+	<update id="updateFileDeleteYn">
+		UPDATE BoardFile
+		SET fileDeleteYn = 1
+		WHERE fileId =
+		#{fileId};
+	</update>
+
+	<!-- 수정하기 -->
+	<update id="updGalleryPost" parameterType="boardVO">
+		UPDATE BOARD
+		SET
+		BOARD_TITLE = #{boardTitle}
+		, BOARD_CONTENT = #{boardContent}
+		WHERE
+		BOARD_ID = #{boardId}
+	</update>
+
+	<update id="markFilesAsDeleted">
+		UPDATE BOARDFILE
+		SET FILEDELETEYN = 1
+		WHERE FILEID IN
+		<foreach item="fileId" collection="fileIds" open="("
+			separator="," close=")">
+			#{fileId}
+		</foreach>
+	</update>
+
+	<!-- 좋아요수 -->
+
+	<!-- 좋아요 여부 확인 -->
+	<select id="checkLikeStatus" parameterType="LikeVO"
+		resultType="int">
+		SELECT COUNT(*)
+		FROM BOARDLIKE
+		WHERE boardId = #{boardId,
+		jdbcType=INTEGER}
+		AND userId = #{userId, jdbcType=VARCHAR}
+		AND likeYn =
+		1
+	</select>
+
+	<!-- 기존 좋아요 데이터 존재 여부 확인 -->
+	<select id="checkExistingLike" parameterType="LikeVO"
+		resultType="int">
+		SELECT COUNT(*)
+		FROM BOARDLIKE
+		WHERE boardId = #{boardId} AND
+		userId = #{userId}
+	</select>
+
+	<!-- 좋아요 데이터 추가 -->
+	<insert id="insertLike" parameterType="LikeVO">
+		INSERT INTO BOARDLIKE
+		(boardId, userId, likeYn)
+		VALUES (
+		#{boardId}, #{userId},
+		1)
+	</insert>
+
+	<!-- 좋아요 상태 업데이트 -->
+	<update id="updateLike">
+		UPDATE BOARDLIKE
+		SET likeYn = #{likeYn}
+		WHERE board_id
+		= #{boardId} AND user_id = #{userId}
+	</update>
+
+	<!-- 게시글 좋아요 개수 조회 -->
+	<select id="getLikeCount" parameterType="int" resultType="int">
+		SELECT
+		COUNT(*)
+		FROM BOARDLIKE
+		WHERE boardId = #{boardId} AND likeYn = 1
+	</select>
+</mapper>

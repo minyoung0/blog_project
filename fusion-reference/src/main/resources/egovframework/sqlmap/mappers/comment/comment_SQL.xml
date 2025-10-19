@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="egovframework.fusion.comment.service.CommentMapper">
+
+
+	<insert id="insertComment" parameterType="commentVO">
+		INSERT INTO
+		BOARD_COMMENT (
+		BOARD_ID, USER_ID, COMMENT_CONTENT,
+		COMMENT_REF,
+		COMMENT_SEQ, PARENT_COMMENT_ID,
+		COMMENT_REGIST_DATETIME
+		) VALUES (
+		#{boardId}, #{userId}, #{commentContent},
+		#{commentRef}, #{commentSeq},
+		NULL, NOW()
+		)
+	</insert>
+
+	<insert id="insertReply" parameterType="commentVO">
+		INSERT INTO BOARD_COMMENT
+		(
+		BOARD_ID, USER_ID, COMMENT_CONTENT,
+		COMMENT_REF, COMMENT_SEQ,
+		PARENT_COMMENT_ID,
+		COMMENT_REGIST_DATETIME
+		) VALUES (
+		#{boardId},
+		#{userId}, #{commentContent},
+		#{commentRef}, #{commentSeq},
+		#{parentCommentId}, now()
+		)
+	</insert>
+
+	<update id="updateComment" parameterType="commentVO">
+		UPDATE BOARD_COMMENT
+		SET COMMENT_CONTENT = #{commentContent}, COMMENT_UPDATE_DATETIME =
+		now()
+		WHERE comment_id = #{commentId}
+	</update>
+
+
+	<update id="deleteComment" parameterType="int">
+		UPDATE BOARD_COMMENT
+		SET DELETE_YN = 1
+		WHERE COMMENT_ID = #{commentId}
+	</update>
+
+	<select id="selectCommentById" parameterType="int"
+		resultType="commentVO">
+		SELECT * FROM BOARD_COMMENT WHERE COMMENT_ID = #{commentId}
+	</select>
+
+	<select id="selectCommentsByBoardId" parameterType="int"
+		resultType="commentVO">
+		WITH RECURSIVE CommentTree AS (
+		SELECT COMMENT_ID,
+		PARENT_COMMENT_ID, COMMENT_REF, COMMENT_SEQ,
+		CASE
+		WHEN DELETE_YN = 1
+		THEN '삭제된 댓글입니다.'
+		ELSE COMMENT_CONTENT
+		END AS COMMENT_CONTENT,
+		USER_ID,
+		BOARD_ID, 1 AS COMMENT_LEVEL
+		FROM BOARD_COMMENT
+		WHERE BOARD_ID =
+		#{boardId} AND PARENT_COMMENT_ID IS NULL
+
+		UNION ALL
+
+		SELECT c.COMMENT_ID,
+		c.PARENT_COMMENT_ID, c.COMMENT_REF, c.COMMENT_SEQ,
+		CASE
+		WHEN c.DELETE_YN
+		= 1 THEN '삭제된 댓글입니다.'
+		ELSE c.COMMENT_CONTENT
+		END AS COMMENT_CONTENT,
+		c.USER_ID, c.BOARD_ID, ct.COMMENT_LEVEL + 1
+		FROM BOARD_COMMENT c
+		INNER
+		JOIN CommentTree ct ON c.PARENT_COMMENT_ID = ct.COMMENT_ID
+		)
+		SELECT *
+		FROM CommentTree ORDER BY COMMENT_REF, COMMENT_SEQ;
+	</select>
+
+
+	<select id="getMaxCommentRef" resultType="int">
+		SELECT
+		IFNULL(MAX(COMMENT_REF), 0) FROM BOARD_COMMENT
+	</select>
+
+	<select id="getMaxCommentSeq" parameterType="int"
+		resultType="int">
+		SELECT IFNULL(MAX(COMMENT_SEQ), 0)
+		FROM BOARD_COMMENT
+		WHERE PARENT_COMMENT_ID = #{parentCommentId}
+	</select>
+	
+	
+	<select id="getCommentById" parameterType="int"
+		resultType="CommentVO">
+		SELECT COMMENT_ID, PARENT_COMMENT_ID, COMMENT_REF,
+		COMMENT_SEQ,
+		COMMENT_CONTENT, USER_ID, BOARD_ID
+		FROM BOARD_COMMENT
+		WHERE
+		COMMENT_ID = #{commentId,jdbcType=INTEGER};
+	</select>
+
+</mapper>

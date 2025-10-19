@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.fusion.blog.user.service.BlogUserMapper">
+	<select id="idCheck" resultType="int">
+		select count(*) from TB_USER
+		where user_id=#{id}
+	</select>
+	
+	<select id="nickNameCheck" resultType="int">
+		select count(*) from TB_USER
+		where nickname=#{nickName}
+	</select>
+	
+	<insert id="join" parameterType="BlogUserVo">
+		insert into TB_USER 
+		(user_id,
+		password,
+		user_name,
+		email,
+		profile_image,
+		create_at,
+		nickname,
+		user_access_right)values(
+		#{userId},
+		#{password},
+		#{userName},
+		#{email},
+		#{profileImage},
+		now(),
+		#{nickName},
+		#{userAccessRight})
+	</insert>
+	
+	 <select id="login" parameterType="BlogUserVo" resultType="BlogUserVo">
+	 	select * from TB_USER
+	 	where user_id=#{userId} and password=#{password}
+	 </select>
+	 
+	 <select id="getUserInfo" parameterType="java.lang.String" resultType="BlogUserVo">
+	 	select * from TB_USER
+	 	where user_id=#{userId}
+	 </select>
+
+</mapper>

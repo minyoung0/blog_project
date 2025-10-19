@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.fusion.progressBoard.service.ProgressBoardMapper">
+	<insert id="insBoardProgress" parameterType="ProgressBoardVO">
+		insert into progress_board (
+		board_id,
+		parent_board_id,
+		board_ref,
+		board_title,
+		board_content,
+		user_id,
+		admin_id,
+		board_create_at,
+		progress_code,
+		board_delete_yn,
+		menu_id)values(
+		seq_progress_id.nextval,
+		0,
+		0,
+		#{boardTitle},
+		#{boardContent},
+		#{userId},
+		#{adminId},
+		sysdate,
+		1,
+		0,
+		#{menuId})
+	</insert>
+	
+	<select id="getBoardList" resultType="ProgressBoardVo">
+		select 
+		b.board_id,
+		b.parent_board_id,
+		b.board_ref,
+		b.board_title,
+		b.board_content,
+		b.user_id,
+		b.admin_id,
+		b.board_create_at,
+		b.board_update_at,
+		b.progress_code,
+		b.board_delete_yn,
+		sc.sub_code_name from progress_board b
+		left join sub_code sc on sc.sub_code_id=b.progress_code where sc.main_code_id='D' and b.board_delete_yn=0 
+		and b.parent_board_id=0
+		
+	</select>
+	
+		<select id="getBoardListWithPaging"  parameterType="ProgressBoardVo" resultType="ProgressBoardVo">
+		select 
+		b.board_id,
+		b.parent_board_id,
+		b.board_ref,
+		b.board_title,
+		b.board_content,
+		b.user_id,
+		b.admin_id,
+		b.board_create_at,
+		b.board_update_at,
+		b.progress_code,
+		b.board_delete_yn,
+		b.menu_id,
+		sc.sub_code_name from progress_board b
+		left join sub_code sc on sc.sub_code_id=b.progress_code 
+		where 
+		(b.progress_code IN (1,2,4))
+		and 
+		sc.main_code_id='D' 
+		and b.board_delete_yn=0 
+		and b.parent_board_id=0
+		and menu_id=#{menuId}
+		<if test="userAccess=='superAdmin'">
+		 and admin_id=#{userId}
+		</if>
+		<if test="userAccess=='normal'">
+		and user_id=#{userId}
+		</if>
+		ORDER BY board_create_at desc
+		OFFSET #{startRow} rows
+		fetch first #{limit} rows only;
+	</select>
+	
+	<select id="getMenuDetail" resultType="ProgressBoardVO">
+		select 
+		b.board_id,
+		b.parent_board_id,
+		b.board_ref,
+		b.board_title,
+		b.board_content,
+		b.user_id,
+		b.admin_id,
+		b.board_create_at,
+		b.board_update_at,
+		b.progress_code,
+		b.board_delete_yn,
+		sc.sub_code_name from progress_board b
+		left join sub_code sc on sc.sub_code_id=b.progress_code 
+		where sc.main_code_id='D' and b.board_id=#{boardId}
+		ORDER BY b.board_ref DESC
+		
+	</select>
+	
+	<select id="latestBoard" resultType="ProgressBoardVo" >
+		select 
+		b.board_id,
+		b.parent_board_id,
+		b.board_ref,
+		b.board_title,
+		b.board_content,
+		b.user_id,
+		b.admin_id,
+		b.board_create_at,
+		b.board_update_at,
+		b.progress_code,
+		b.board_delete_yn,
+		sc.sub_code_name from progress_board b
+		left join sub_code sc on sc.sub_code_id=b.progress_code 
+		where sc.main_code_id='D' 
+		and 
+		(b.board_id=#{boardId} OR b.parent_board_id=#{boardId})
+		order by board_create_at desc
+		fetch first 1 row only;
+	</select>
+	
+	<select id="totalBoard" resultType="ProgressBoardVo">
+		select 
+		b.board_id,
+		b.parent_board_id,
+		b.board_ref,
+		b.board_title,
+		b.board_content,
+		b.user_id,
+		b.admin_id,
+		b.board_create_at,
+		b.board_update_at,
+		b.progress_code,
+		b.board_delete_yn,
+		sc.sub_code_name from progress_board b
+		left join sub_code sc on sc.sub_code_id=b.progress_code 
+		where sc.main_code_id='D' 
+		and 
+		(b.board_id=#{boardId} OR b.parent_board_id=#{boardId})
+		order by board_create_at desc
+	</select>
+	
+	<select id="getResponse" resultType="ProgressResponseVo">
+		SELECT 
+		r.response_id,
+		r.board_id,
+		r.admin_id,
+		r.response_code,
+		r.response_content,
+		r.response_create_at,
+		r.response_update_at,
+		sc.sub_code_name 
+		FROM 
+		progress_response r
+		LEFT JOIN 
+		sub_code sc ON sc.sub_code_id=r.response_code 
+		WHERE sc.main_code_id='E' 
+		AND board_id=#{boardId}
+	</select>
+	
+	<update id="modifyProgressBoard">
+		update progress_board 
+		set
+		board_title = #{boardTitle},
+		board_content = #{boardContent},
+		board_update_at=sysdate
+		where board_id=#{boardId}
+	</update>
+	
+	<select id="getMaxBoardRef" resultType="int">
+		select nvl(max(board_ref),0) from progress_board
+		where parent_board_id=#{boardId}
+	</select>
+	
+	<insert id="insObjection">
+	insert into progress_board (
+		board_id,
+		parent_board_id,
+		board_ref,
+		board_title,
+		board_content,
+		user_id,
+		admin_id,
+		board_create_at,
+		progress_code,
+		board_delete_yn,
+		menu_id)values(
+		seq_progress_id.nextval,
+		#{boardId},
+		#{insertRef},
+		#{boardTitle},
+		#{boardContent},
+		#{userId},
+		#{adminId},
+		sysdate,
+		1,
+		0,
+		#{menuId})
+	
+	</insert>
+	
+	<select id="countBoard" parameterType="ProgressBoardVO" resultType="int">
+		SELECT count(*) FROM progress_board b
+		LEFT JOIN sub_code sc ON b.progress_code=sc.sub_code_id 
+		WHERE sc.main_code_id='D' AND b.board_delete_yn=0
+		and b.parent_board_id=0
+		and b.menu_id=#{menuId}
+		<if test="userAccess=='superAdmin'">
+		 	and b.admin_id=#{userId}
+		</if>
+		<if test="userAccess=='normal'">
+			and b.user_id=#{userId}
+		</if>
+	</select>
+	
+	<!-- 승인 or 반려 후 상태변화 -->
+	<update id="updateProgressCode" parameterType="int">
+		update progress_board set 
+		<if test="code=='admission' or code=='finalAdmission'">
+			progress_code=4
+		</if>
+		<if test="code=='companion'">
+			progress_code=2
+		</if>
+		<if test="code == 'objection'">
+			progress_code=1
+		</if>
+		where board_id=#{boardId}
+	</update>
+	
+	<insert id="insProgressResponse" >
+		insert into progress_response(
+		response_id,
+		board_id,
+		admin_id,
+		response_code,
+		response_content,
+		response_create_at
+		)values(
+		seq_response_id.nextval,
+		#{boardId},
+		#{adminId},
+		#{progressCode},
+		#{progressContent},
+		sysdate
+		)
+	</insert>
+	
+	<!-- 반려사유수정 -->
+	<update id="modiComReason">
+		update progress_response
+		set response_content=#{responseContent}
+		where response_id=#{responseId}
+	</update>
+	
+	<select id="getLatestBoardByUserId" resultType="ProgressBoardVO">
+		SELECT * FROM progress_board WHERE user_id=#{userId}
+	ORDER BY board_create_at DESC FETCH FIRST 1 ROW ONLY;
+	</select>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

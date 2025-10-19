@@ -1,0 +1,47 @@
+#main {
+	width: 800px;
+	margin: 0 auto;
+}
+
+
+#mainmenu {
+	background-color: orange;
+	height: 100px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+
+#submenu {
+	background-color: gold;
+	height: 600px;
+	width: 200px;
+	float: left;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column; /* 세로 방향 */
+}
+
+#content {
+	background-color: cornflowerblue;
+	height: 600px;
+	width: 600px;
+	float: left;
+	display: flex;
+	justify-content: center;
+	align-items: center;	
+	flex-direction: column;
+}
+
+#main::after {
+	content: '';
+	display: block;
+	clear: both;
+}
+
+a {
+	text-decoration: none;
+	margin: 5px;
+}

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.fusion.blog.myPage.service.ChatMapper">
+	
+	<select id="getChattingList"  resultType="ChattingVo">
+		SELECT 
+		    c.*, 
+		    m.message, m.sender_id, m.receiver_id, m.sending_time,
+		    u.nickname AS other_user_nickname,
+		    u.profile_image AS other_user_profile,
+		    u.user_Id As other_user_id
+		FROM tb_chatroom c
+		LEFT JOIN (
+		    SELECT m1.*
+		    FROM tb_message m1
+		    INNER JOIN (
+		        SELECT room_id, MAX(sending_time) AS recently_time
+		        FROM tb_message
+		        GROUP BY room_id
+		    ) m2 ON m1.room_id = m2.room_id AND m1.sending_time = m2.recently_time
+		) m ON c.room_id = m.room_id
+		LEFT JOIN tb_user u 
+		    ON u.user_id = CASE 
+		                      WHEN c.user1_id = #{userId} THEN c.user2_id
+		                      ELSE c.user1_id 
+		                  END
+		WHERE c.user1_id = #{userId} OR c.user2_id = #{userId}
+		ORDER BY m.sending_time DESC;
+	</select>
+	
+	<select id="getChatRoomId" resultType="Integer">
+		select room_id from tb_chatroom
+		where 
+		   (user1_id = #{receiverId} AND user2_id = #{userId})
+		    or
+		   (user2_id = #{receiverId} AND user1_id = #{userId})
+	</select>
+	
+	<insert id="createChatRoom" parameterType="ChattingVo" useGeneratedKeys="true" keyProperty="roomId">
+		insert into tb_chatroom(
+			user1_id,
+			user2_id,
+			create_at,
+			user1_isActive,
+			user2_isActive
+		)
+		values(
+		#{user1Id},
+		#{user2Id},
+		now(),
+		'Y',
+		'Y'
+		)
+		
+	</insert>
+	
+	<select id="getChatting" resultType="ChattingVo">
+		SELECT 
+		    m.message_id,
+		    m.room_id,
+		    m.sender_id,
+		    sender.nickname AS senderNickname,
+		    sender.profile_image AS senderProfile,
+		    m.receiver_id,
+		    receiver.nickname AS receiverNickname,
+		    receiver.profile_image AS receiverProfile,
+		    m.message,
+		    m.sending_time,
+		    m.update_time,
+		    m.read_yn,
+		    m.delete_yn
+		FROM 
+		    tb_message m
+		JOIN 
+		    tb_user sender ON m.sender_id = sender.user_id
+		JOIN 
+		    tb_user receiver ON m.receiver_id = receiver.user_id
+		WHERE 
+		    m.room_id = #{roomId}
+		ORDER BY 
+		    m.sending_time ASC;
+
+	</select>
+	
+	<insert id="saveMessage" parameterType="ChattingVo">
+		insert into tb_message(
+			room_id,
+			sender_id,
+			receiver_id,
+			message,
+			sending_time,
+			read_yn,
+			delete_yn
+		)values(
+			#{roomId},
+			#{senderId},
+			#{receiverId},
+			#{message},
+			now(),
+			'N',
+			'N'
+		)
+	</insert>
+	
+	<update id="markMessageAsY">
+		update tb_message set read_yn='Y' 
+		where room_id=#{roomId} 
+		and receiver_id=#{receiverId}
+		and sender_id=#{senderId}
+		and read_yn='N'
+	</update>
+</mapper>
