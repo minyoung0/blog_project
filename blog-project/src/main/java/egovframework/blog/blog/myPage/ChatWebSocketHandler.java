@@ -1,4 +1,4 @@
-package egovframework.fusion.blog.myPage;
+package egovframework.blog.blog.myPage;
 
 
 import org.codehaus.jackson.map.ObjectMapper;
@@ -7,8 +7,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import egovframework.fusion.blog.myPage.service.ChatService;
-import egovframework.fusion.blog.myPage.vo.ChattingVO;
+import egovframework.blog.blog.myPage.service.ChatService;
+import egovframework.blog.blog.myPage.vo.ChattingVO;
 
 import java.net.URI;
 import java.util.*;

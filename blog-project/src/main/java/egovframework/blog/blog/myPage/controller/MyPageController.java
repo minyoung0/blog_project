@@ -1,4 +1,4 @@
-package egovframework.fusion.blog.myPage.controller;
+package egovframework.blog.blog.myPage.controller;
 
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,15 +20,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import egovframework.fusion.blog.myPage.service.MyPageService;
-import egovframework.fusion.blog.myPage.vo.BlogCategoryVO;
-import egovframework.fusion.blog.myPage.vo.BlogCommentVO;
-import egovframework.fusion.blog.myPage.vo.BlogLikeVO;
-import egovframework.fusion.blog.myPage.vo.PostVO;
-import egovframework.fusion.blog.myPage.vo.VisitVO;
-import egovframework.fusion.blog.user.service.BlogUserService;
-import egovframework.fusion.blog.user.vo.BlogUserVO;
-import egovframework.fusion.user.vo.UserVO;
+import egovframework.blog.blog.myPage.service.MyPageService;
+import egovframework.blog.blog.myPage.vo.BlogCategoryVO;
+import egovframework.blog.blog.myPage.vo.BlogCommentVO;
+import egovframework.blog.blog.myPage.vo.BlogLikeVO;
+import egovframework.blog.blog.myPage.vo.PostVO;
+import egovframework.blog.blog.myPage.vo.VisitVO;
+import egovframework.blog.blog.user.service.BlogUserService;
+import egovframework.blog.blog.user.vo.BlogUserVO;
 
 import java.util.Arrays;
 import java.util.HashMap;

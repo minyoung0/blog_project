@@ -1,4 +1,4 @@
-package egovframework.fusion.blog.myPage.vo;
+package egovframework.blog.blog.myPage.vo;
 
 import java.io.Serializable;
 import java.util.ArrayList;

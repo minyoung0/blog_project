@@ -1,4 +1,4 @@
-package egovframework.fusion.blog.user.service;
+package egovframework.blog.blog.user.service;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.slf4j.Logger;
@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import egovframework.fusion.blog.user.vo.BlogUserVO;
+import egovframework.blog.blog.user.vo.BlogUserVO;
 
 
 @Service

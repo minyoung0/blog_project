@@ -1,5 +1,4 @@
-<%@page import="egovframework.fusion.blog.user.vo.BlogUserVO"%>
-<%@page import="egovframework.fusion.user.vo.UserVO"%>
+<%@page import="egovframework.blog.blog.user.vo.BlogUserVO"%>
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>

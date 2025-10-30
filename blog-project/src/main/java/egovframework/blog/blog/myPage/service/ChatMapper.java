@@ -1,4 +1,4 @@
-package egovframework.fusion.blog.myPage.service;
+package egovframework.blog.blog.myPage.service;
 
 
 import java.time.LocalDate;
@@ -9,13 +9,13 @@ import java.util.Optional;
 import org.apache.ibatis.annotations.Param;
 import org.egovframe.rte.psl.dataaccess.mapper.Mapper;
 
-import egovframework.fusion.blog.myPage.vo.BlogCategoryVO;
-import egovframework.fusion.blog.myPage.vo.BlogCommentVO;
-import egovframework.fusion.blog.myPage.vo.ChattingVO;
-import egovframework.fusion.blog.myPage.vo.PostVO;
-import egovframework.fusion.blog.myPage.vo.ViewVO;
-import egovframework.fusion.blog.myPage.vo.VisitVO;
-import egovframework.fusion.blog.user.vo.BlogUserVO;
+import egovframework.blog.blog.myPage.vo.BlogCategoryVO;
+import egovframework.blog.blog.myPage.vo.BlogCommentVO;
+import egovframework.blog.blog.myPage.vo.ChattingVO;
+import egovframework.blog.blog.myPage.vo.PostVO;
+import egovframework.blog.blog.myPage.vo.ViewVO;
+import egovframework.blog.blog.myPage.vo.VisitVO;
+import egovframework.blog.blog.user.vo.BlogUserVO;
 
 
 @Mapper

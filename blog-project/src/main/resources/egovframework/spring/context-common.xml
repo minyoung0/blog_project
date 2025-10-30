@@ -9,7 +9,7 @@
        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller" />
     </context:component-scan>
 
-	<bean class="egovframework.fusion.blog.myPage.WebSocketConfig" />
+	<bean class="egovframework.blog.blog.myPage.WebSocketConfig" />
 
 	<bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
 		<property name="basenames">

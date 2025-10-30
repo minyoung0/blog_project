@@ -17,7 +17,7 @@
 		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Repository" />
 	</context:component-scan>
 <!-- 	
-	<context:component-scan base-package="egovframework.fusion.blog.myPage">
+	<context:component-scan base-package="egovframework.blog.blog.myPage">
     	<context:include-filter type="annotation" expression="org.springframework.context.annotation.Configuration"/>
 	</context:component-scan>
  -->
@@ -25,9 +25,9 @@
 
 	<bean
 		class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
-		<property name="webBindingInitializer">
+		 <property name="webBindingInitializer">
 			<bean
-				class="egovframework.fusion.cmmn.web.EgovBindingInitializer" />
+				class="egovframework.blog.blog.cmmn.web.EgovBindingInitializer" />
 		</property>
 		<property name="messageConverters">
 			<list>
@@ -89,9 +89,9 @@
 		</property>
 	</bean>
 	<!-- For Pagination Tag -->
-	<bean id="imageRenderer"
-		class="egovframework.fusion.cmmn.web.EgovImgPaginationRenderer" />
-
+ 	<bean id="imageRenderer"
+		class="egovframework.blog.blog.cmmn.web.EgovImgPaginationRenderer" />
+ 
 	<bean id="paginationManager"
 		class="org.egovframe.rte.ptl.mvc.tags.ui.pagination.DefaultPaginationManager">
 		<property name="rendererType">
@@ -106,22 +106,6 @@
 
 	<mvc:view-controller path="/cmmn/validator.do"
 		view-name="cmmn/validator" />
-
-
-	<mvc:interceptors>
-		<mvc:interceptor>
-			<mvc:mapping path="/*/*.do" />
-			<mvc:exclude-mapping path="/main/main.do" />
-			<mvc:exclude-mapping path="/user/log*.do" />
-			<mvc:exclude-mapping path="/sns/*" />
-			<mvc:exclude-mapping path="/studyRoom/*" />
-			<mvc:exclude-mapping path="/chatting/**" />
-			<!-- 	<mvc:exclude-mapping path="/progress/*" /> -->
-			<bean
-				class="egovframework.fusion.main.interceptor.LoginCheckInterceptor"
-				id="LoginCheckInerceptor" />
-		</mvc:interceptor>
-	</mvc:interceptors>
 
 
 

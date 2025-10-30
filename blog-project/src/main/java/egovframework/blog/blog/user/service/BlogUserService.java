@@ -1,6 +1,6 @@
-package egovframework.fusion.blog.user.service;
+package egovframework.blog.blog.user.service;
 
-import egovframework.fusion.blog.user.vo.BlogUserVO;
+import egovframework.blog.blog.user.vo.BlogUserVO;
 
 public interface BlogUserService {
 	

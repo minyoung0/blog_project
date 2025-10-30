@@ -1,9 +1,9 @@
-package egovframework.fusion.blog.user.service;
+package egovframework.blog.blog.user.service;
 
 import org.apache.ibatis.annotations.Param;
 import org.egovframe.rte.psl.dataaccess.mapper.Mapper;
 
-import egovframework.fusion.blog.user.vo.BlogUserVO;
+import egovframework.blog.blog.user.vo.BlogUserVO;
 
 @Mapper
 public interface BlogUserMapper {

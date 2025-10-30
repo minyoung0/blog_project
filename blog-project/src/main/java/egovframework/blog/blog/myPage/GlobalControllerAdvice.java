@@ -1,4 +1,4 @@
-package egovframework.fusion.blog.myPage;
+package egovframework.blog.blog.myPage;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -10,9 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
-import egovframework.fusion.blog.myPage.service.MyPageService;
-import egovframework.fusion.blog.myPage.vo.BlogCategoryVO;
-import egovframework.fusion.blog.user.vo.BlogUserVO;
+import egovframework.blog.blog.myPage.service.MyPageService;
+import egovframework.blog.blog.myPage.vo.BlogCategoryVO;
+import egovframework.blog.blog.user.vo.BlogUserVO;
 
 @ControllerAdvice
 public class GlobalControllerAdvice {

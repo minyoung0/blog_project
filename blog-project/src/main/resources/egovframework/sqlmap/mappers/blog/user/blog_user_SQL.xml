@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="egovframework.fusion.blog.user.service.BlogUserMapper">
+<mapper namespace="egovframework.blog.blog.user.service.BlogUserMapper">
 	<select id="idCheck" resultType="int">
 		select count(*) from TB_USER
 		where user_id=#{id}

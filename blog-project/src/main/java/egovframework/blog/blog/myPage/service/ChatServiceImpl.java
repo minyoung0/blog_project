@@ -1,4 +1,4 @@
-package egovframework.fusion.blog.myPage.service;
+package egovframework.blog.blog.myPage.service;
 
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,14 +27,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import egovframework.fusion.blog.myPage.vo.BlogCategoryVO;
-import egovframework.fusion.blog.myPage.vo.BlogCommentVO;
-import egovframework.fusion.blog.myPage.vo.ChattingVO;
-import egovframework.fusion.blog.myPage.vo.PostVO;
-import egovframework.fusion.blog.myPage.vo.ViewVO;
-import egovframework.fusion.blog.myPage.vo.VisitVO;
-import egovframework.fusion.blog.user.service.BlogUserMapper;
-import egovframework.fusion.blog.user.vo.BlogUserVO;
+import egovframework.blog.blog.myPage.vo.BlogCategoryVO;
+import egovframework.blog.blog.myPage.vo.BlogCommentVO;
+import egovframework.blog.blog.myPage.vo.ChattingVO;
+import egovframework.blog.blog.myPage.vo.PostVO;
+import egovframework.blog.blog.myPage.vo.ViewVO;
+import egovframework.blog.blog.myPage.vo.VisitVO;
+import egovframework.blog.blog.user.service.BlogUserMapper;
+import egovframework.blog.blog.user.vo.BlogUserVO;
 
 @Service
 public class ChatServiceImpl extends EgovAbstractServiceImpl implements ChatService {

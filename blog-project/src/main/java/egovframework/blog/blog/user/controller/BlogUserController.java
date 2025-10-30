@@ -1,4 +1,4 @@
-package egovframework.fusion.blog.user.controller;
+package egovframework.blog.blog.user.controller;
 
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,10 +11,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 
-import egovframework.fusion.blog.myPage.service.MyPageService;
-import egovframework.fusion.blog.user.service.BlogUserService;
-import egovframework.fusion.blog.user.vo.BlogUserVO;
-import egovframework.fusion.user.vo.UserVO;
+import egovframework.blog.blog.myPage.service.MyPageService;
+import egovframework.blog.blog.user.service.BlogUserService;
+import egovframework.blog.blog.user.vo.BlogUserVO;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -108,7 +107,7 @@ public class BlogUserController {
 			@RequestParam(value = "profile", required = false)MultipartFile profile,BlogUserVO userVo){
 		Map<String,Object> response=new HashMap<>();
 		try {
-			String uploadDir="C:/Users/미냠/Downloads/final/fusion-reference/src/main/webapp/images/egovframework/profile/";
+			String uploadDir="C:/Users/미냠/Downloads/final/blog/src/main/webapp/images/egovframework/profile/";
 
 			String filePath="";
 			if(profile!=null  && !profile.isEmpty()) {

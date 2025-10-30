@@ -1,4 +1,4 @@
-package egovframework.fusion.blog.user.vo;
+package egovframework.blog.blog.user.vo;
 
 import java.io.Serializable;
 

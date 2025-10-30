@@ -7,17 +7,17 @@
 
 
 
-	<!-- <bean id="log" class="egovframework.fusion.aop.ControlAdvice"></bean> 
+	<!-- <bean id="log" class="egovframework.blog.aop.ControlAdvice"></bean> 
 		<aop:config> <aop:aspect ref="log"> <aop:pointcut expression="execution(* 
-		egovframework.fusion..*Controller.*(..))" id="allPointCut" /> <aop:before 
+		egovframework.blog..*Controller.*(..))" id="allPointCut" /> <aop:before 
 		method="printLog" pointcut-ref="allPointCut" /> </aop:aspect> </aop:config> -->
 	<!-- <aop:config> <aop:pointcut id="serviceMethod" expression="execution(* 
-		egovframework.fusion..service.*Impl.*(..))" /> <aop:aspect ref="exceptionTransfer"> 
+		egovframework.blog..service.*Impl.*(..))" /> <aop:aspect ref="exceptionTransfer"> 
 		<aop:after-throwing throwing="exception" pointcut-ref="serviceMethod" method="transfer" 
 		/> </aop:aspect> </aop:config> -->
 <!-- 
 	<bean id="MenuAccessLog"
-		class="egovframework.fusion.aop.MenuAccessLog"></bean>
+		class="egovframework.blog.aop.MenuAccessLog"></bean>
 	<aop:config>
 		<aop:aspect ref="MenuAccessLog">
 			<aop:before method="MenuAccessLog" pointcut-ref="allPointCut" />
@@ -73,14 +73,10 @@
 		class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
 		<property name="maxUploadSize" value="52428800" /> <!-- 10MB -->
 	</bean>
-	<bean id="egovHandler"
-		class="egovframework.fusion.cmmn.EgovSampleExcepHndlr" />
+ 	<bean id="egovHandler"
+		class="egovframework.blog.blog.cmmn.EgovSampleExcepHndlr" />
 	<bean id="otherHandler"
-		class="egovframework.fusion.cmmn.EgovSampleOthersExcepHndlr" />
-
-
-
-
+		class="egovframework.blog.blog.cmmn.EgovSampleOthersExcepHndlr" />
 
 
 

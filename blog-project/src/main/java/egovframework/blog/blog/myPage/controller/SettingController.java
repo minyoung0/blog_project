@@ -1,4 +1,4 @@
-package egovframework.fusion.blog.myPage.controller;
+package egovframework.blog.blog.myPage.controller;
 
 import java.util.HashMap;
 import java.util.List;
@@ -15,9 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import egovframework.fusion.blog.myPage.service.MyPageService;
-import egovframework.fusion.blog.myPage.vo.BlogCategoryVO;
-import egovframework.fusion.blog.user.service.BlogUserService;
+import egovframework.blog.blog.myPage.service.MyPageService;
+import egovframework.blog.blog.myPage.vo.BlogCategoryVO;
+import egovframework.blog.blog.user.service.BlogUserService;
 
 @Controller
 @RequestMapping("/blog/setting")
